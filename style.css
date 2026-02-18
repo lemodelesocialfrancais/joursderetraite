@@ -1,0 +1,1832 @@
+/* ============================================
+    JOURS DE RETRAITE - Design Moderne Navy & Gold
+    ============================================ */
+
+/* ============================================
+    1. VARIABLES CSS
+    ============================================ */
+:root {
+    color-scheme: dark;
+    forced-color-adjust: none;
+    /* Couleurs principales - Palette Navy & Gold */
+    --navy-900: #0a192f;
+    --navy-800: #112240;
+    --navy-700: #1d3557;
+    --navy-600: #233554;
+    --navy-500: #2d4a6f;
+    --navy-400: #3d5a80;
+    --navy-300: #4a6fa5;
+
+    --gold-500: #d4af37;
+    --gold-400: #e6c55a;
+    --gold-300: #f0d78c;
+    --gold-200: #f8e6b8;
+    --gold-100: #fdf5dc;
+
+    /* Neutres */
+    --white: #ffffff;
+    --gray-100: #f8f9fa;
+    --gray-200: #e9ecef;
+    --gray-300: #dee2e6;
+    --gray-400: #ced4da;
+    --gray-500: #adb5bd;
+    --gray-600: #6c757d;
+
+    /* Gradients */
+    --gradient-navy: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
+    --gradient-gold: linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 50%, var(--gold-300) 100%);
+    --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+
+    /* Ombres */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
+    --shadow-glow: 0 0 30px rgba(212, 175, 55, 0.2);
+
+    /* Transitions */
+    --transition-fast: 150ms ease;
+    --transition-base: 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    --transition-slow: 600ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+    /* Border radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 20px;
+    --radius-xl: 28px;
+    --radius-full: 9999px;
+}
+
+/* ============================================
+    2. POLICES & BASE
+    ============================================ */
+
+*,
+*::before,
+*::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--gradient-navy) !important;
+    color: var(--white);
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.5;
+}
+
+/* ============================================
+    3. LAYOUT PRINCIPAL - Hauteur fixe mobile
+    ============================================ */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    max-width: 100vw;
+    position: relative;
+    /* overflow: hidden; */
+    /* Cause coupure ombre bouton */
+    overflow-x: hidden;
+    /* Garder l'overflow-x pour éviter le scroll horizontal */
+    overflow-y: auto;
+    /* Permet le scroll vertical sur tous les appareils */
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 0.4rem 0.1rem 0.1rem 0.1rem;
+    /* Significantement réduit pour compacter le haut */
+}
+
+.main-content::-webkit-scrollbar {
+    display: none;
+}
+
+/* ============================================
+    4. HEADER AVEC BATEAU STYLISÉ
+    ============================================ */
+.header {
+    padding: 0;
+    position: relative;
+    flex-shrink: 0;
+    margin-bottom: 0.2rem;
+}
+
+.header-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    overflow: visible;
+    margin-left: -0.5rem;
+    margin-top: 0;
+    /* Removed negative margin -1rem */
+}
+
+.header-boat-wrap {
+    position: relative;
+    display: inline-block;
+    will-change: transform;
+    transform: translateZ(0);
+}
+
+.header-boat {
+    width: 45px;
+    height: auto;
+    flex-shrink: 0;
+}
+
+@media (min-width: 768px) {
+    .header-boat {
+        width: 60px;
+    }
+}
+
+
+
+.header-title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    background: var(--gradient-gold);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -0.02em;
+    margin-bottom: 0;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: visible;
+    max-width: 100%;
+    display: inline-block;
+    position: relative;
+}
+
+@keyframes sparklePass {
+    0% {
+        opacity: 0;
+        transform: translateX(-120%) skewX(-15deg);
+    }
+
+    20% {
+        opacity: 0.4;
+    }
+
+    80% {
+        opacity: 0.4;
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(120%) skewX(-15deg);
+    }
+}
+
+.sparkle-pass .app-container::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(212, 175, 55, 0.05) 30%,
+            rgba(255, 255, 255, 0.15) 50%,
+            rgba(212, 175, 55, 0.05) 70%,
+            transparent 100%);
+    pointer-events: none;
+    mix-blend-mode: color-dodge;
+    opacity: 0;
+    z-index: 2;
+    transform: translateX(-100%) skewX(-15deg);
+    animation: sparklePass 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Title reveal animation moved to index.html for performance */
+
+
+.header-subtitle {
+    font-size: 1.1rem !important;
+    color: var(--gray-400);
+    font-weight: 400;
+    line-height: 1.2;
+    display: block;
+}
+
+/* ============================================
+    5. CARTES MODERNES - Glassmorphism
+    ============================================ */
+.card {
+    background: var(--gradient-card);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    padding: 0.4rem !important;
+    /* Réduit pour compacter */
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: 0.1rem;
+    will-change: transform, opacity;
+    transform: translateZ(0);
+}
+
+.card> :last-child {
+    margin-bottom: 0;
+}
+
+.card-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold-400);
+    margin-bottom: 0;
+}
+
+/* ============================================
+    6. CHAMPS DE SAISIE
+    ============================================ */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+    margin-bottom: 0.1rem;
+    /* Reduced from 0.4rem */
+}
+
+/* On retire la marge si l'élément est suivi d'un conteneur caché ou s'il est dernier */
+.input-wrapper:last-of-type {
+    margin-bottom: 0;
+}
+
+.input-wrapper .input-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--gold-500);
+    font-size: 0.75rem;
+    z-index: 1;
+}
+
+.input-field {
+    width: 100%;
+    padding: 0.5rem 0.75rem 0.5rem 2rem;
+    /* Reduced from 0.6rem */
+    font-size: 1rem;
+    /* Reduced from 1rem */
+    font-weight: 600;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    color: var(--white);
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    outline: none;
+    transition: all var(--transition-base);
+}
+
+.input-field::placeholder {
+    color: var(--gray-500);
+    font-weight: 400;
+}
+
+.input-field:focus {
+    border-color: var(--gold-500);
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: var(--shadow-glow);
+}
+
+.input-field:focus+.input-icon {
+    color: var(--gold-400);
+}
+
+/* ============================================
+    7. RÉSULTAT - Compteur animé
+    ============================================ */
+.result-card {
+    background:
+        linear-gradient(135deg, rgba(11, 22, 40, 0.8) 0%, rgba(10, 25, 47, 0.9) 100%) padding-box,
+        var(--gradient-gold) border-box;
+    border: 3px solid transparent;
+    border-radius: var(--radius-lg);
+    padding: 0.5rem 0.75rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+/* Trait supérieur supprimé au profit d'une bordure complète */
+
+.result-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--gold-400);
+    margin-bottom: 0.1rem;
+}
+
+.result-value {
+    /* Styles de base pour le conteneur du résultat */
+    color: var(--gold-400);
+    width: 100%;
+}
+
+/* NOUVEAUX STYLES POUR L'AFFICHAGE STRUCTURÉ */
+
+/* Grille Temporelle (Mode Temporel) */
+.result-grid-temporal {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    align-items: center;
+    /* Aligne la phrase de fin avec les cases */
+    width: 100%;
+    margin-top: 0.15rem;
+}
+
+.result-box {
+    background: rgba(10, 25, 47, 0.4);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: var(--radius-md);
+    padding: 0.4rem 0.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    flex: 1 1 auto;
+    transition: transform var(--transition-base);
+}
+
+.result-box:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 175, 55, 0.5);
+    background: rgba(10, 25, 47, 0.6);
+}
+
+.result-box .value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--gold-400);
+    line-height: 1.1;
+}
+
+.result-box .label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-400);
+    margin-top: 0.1rem;
+    font-weight: 600;
+}
+
+/* Grille Financière (Mode Financier) */
+.result-grid-financial {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-top: 0.15rem;
+}
+
+.result-box.highlight {
+    background: rgba(212, 175, 55, 0.1);
+    border: 2px solid rgba(212, 175, 55, 0.4);
+    box-shadow: 0 0 20px rgba(212, 175, 55, 0.15);
+}
+
+.result-box.highlight .value {
+    color: var(--gold-400);
+    font-size: 2rem;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+/* Texte "fois" en dehors de la boîte jaune - même style que le reste de la phrase */
+.result-fois-text {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-size: 0.9rem;
+    font-weight: 400;
+    color: var(--gray-300);
+    margin-left: 0;
+    line-height: 1.2;
+    display: inline;
+    vertical-align: middle;
+}
+
+/* Fin Nouveaux Styles */
+
+.counter-digit {
+    display: inline-flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* background: rgba(0, 0, 0, 0.3); */
+    /* Retiré pour le nouveau design */
+    border-radius: var(--radius-sm);
+    padding: 0 0.1rem;
+    /* min-width: 1.25rem; */
+    text-align: center;
+}
+
+.counter-digit span {
+    display: inline-block;
+    animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* ============================================
+    8. BOUTONS
+    ============================================ */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    white-space: nowrap;
+}
+
+.btn-primary {
+    background: var(--gold-500);
+    color: var(--navy-900);
+    box-shadow: var(--shadow-gold), 0 0 20px rgba(212, 175, 55, 0.3);
+    border: 2px solid var(--gold-500);
+    position: relative;
+    overflow: hidden;
+    border-radius: var(--radius-lg);
+    background-image: none !important;
+    background-size: 1px 1px !important;
+}
+
+.btn-primary.one-shot-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-primary.one-shot-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.05) 35%,
+            rgba(255, 255, 255, 0.3) 50%,
+            rgba(255, 255, 255, 0.05) 65%,
+            transparent 100%);
+    transform: translateX(-120%);
+    animation: shimmer 1.4s ease-out 0.2s forwards;
+    will-change: transform;
+    pointer-events: none;
+}
+
+.btn-primary:hover {
+    background: var(--gold-500) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary {
+    background: var(--gradient-card);
+    color: var(--gray-300);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.btn-secondary:hover {
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+    color: var(--white);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.btn-group {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.3rem;
+}
+
+.share-section {
+    margin-top: 0.5rem;
+    padding-top: 0.5rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-group .btn {
+    flex: 1;
+}
+
+/* ============================================
+    9. INTERRUPTEUR DE MODES - Sliding Pill Animation
+    ============================================ */
+.mode-toggle {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: var(--radius-full);
+    padding: 0.12rem;
+    margin-bottom: 0.3rem;
+    margin-top: -6px;
+    position: relative;
+    z-index: 10;
+}
+
+/* La pilule dorée glissante */
+.mode-toggle-pill {
+    position: absolute;
+    top: 0.12rem;
+    left: 0.12rem;
+    width: calc(50% - 0.12rem);
+    height: calc(100% - 0.24rem);
+    background: var(--gold-500);
+    border-radius: var(--radius-full);
+    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
+    transition: transform 0.5s cubic-bezier(0.25, 1.05, 0.5, 1.02);
+    will-change: transform;
+    z-index: 0;
+    overflow: hidden;
+}
+
+.mode-toggle-pill::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg,
+            rgba(255, 255, 255, 0.25) 0%,
+            transparent 40%,
+            transparent 60%,
+            rgba(255, 255, 255, 0.15) 100%);
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+/* Position de la pilule selon le mode */
+.mode-toggle[data-active="temporal"] .mode-toggle-pill {
+    transform: translateX(0);
+}
+
+.mode-toggle[data-active="financial"] .mode-toggle-pill {
+    transform: translateX(100%);
+}
+
+.mode-toggle-btn {
+    flex: 1;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--gray-400);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    z-index: 1;
+    position: relative;
+}
+
+.mode-toggle-btn svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    transform: translateX(-5px);
+    margin-bottom: -3px;
+}
+
+.mode-toggle-btn.active {
+    color: var(--navy-900);
+    background: transparent;
+}
+
+.mode-toggle-btn:hover:not(.active) {
+    color: var(--white);
+    transform: translateY(-2px);
+}
+
+/* ============================================
+    10. ACCORDÉON MÉTHODOLOGIE
+    ============================================ */
+.accordion {
+    background: var(--gradient-card);
+    border: 2px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-top: 0.4rem;
+    flex-shrink: 0;
+    transition: all var(--transition-base);
+}
+
+.accordion:hover {
+    transform: translateY(-2px);
+    border-color: rgba(212, 175, 55, 0.3);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+}
+
+.accordion-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 1rem;
+    cursor: pointer;
+    transition: all var(--transition-base);
+}
+
+
+
+.accordion-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--gray-300);
+}
+
+.accordion-icon {
+    color: var(--gold-500);
+    transition: transform var(--transition-base);
+}
+
+.accordion.open .accordion-icon {
+    transform: rotate(180deg);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height var(--transition-slow);
+}
+
+.accordion.open .accordion-content {
+    max-height: 500px;
+}
+
+.accordion-body {
+    padding: 0 0.75rem 0.5rem 0.75rem;
+}
+
+/* ============================================
+    11. INFOGRAPHIE SVG
+    ============================================ */
+.infography {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: var(--radius-md);
+    padding: 0.5rem;
+    margin-top: 0.25rem;
+}
+
+.infography svg {
+    width: 100%;
+    height: auto;
+}
+
+.infography text {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    fill: var(--gray-300);
+}
+
+.infography .label {
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.infography .value {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    font-size: 12px;
+    fill: var(--gold-400);
+    font-weight: 600;
+}
+
+/* ============================================
+    12. SNACKBAR PWA
+    ============================================ */
+.snackbar {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--gradient-card);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: var(--radius-lg);
+    padding: 0.875rem 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    box-shadow: var(--shadow-lg);
+    z-index: 1000;
+    opacity: 0;
+    transition: all var(--transition-base);
+    width: 90%;
+    max-width: 400px;
+}
+
+.snackbar.show {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.snackbar-text {
+    font-size: 0.85rem;
+    color: var(--gray-200);
+}
+
+.snackbar-btn {
+    background: var(--gold-500);
+    color: var(--navy-900);
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    flex-shrink: 0;
+}
+
+.snackbar-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+.snackbar-close {
+    background: none;
+    border: none;
+    color: var(--gray-500);
+    cursor: pointer;
+    padding: 0.25rem;
+    font-size: 1rem;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Bubbles animation moved to index.html for performance */
+
+/* ============================================
+    14. UTILITAIRES
+    ============================================ */
+.hidden {
+    display: none !important;
+}
+
+/* ============================================
+    15. RESPONSIVE
+    ============================================ */
+/* Réglages pour petits écrans (mobiles) */
+@media (max-width: 1099px) {
+    .main-content {
+        padding: 0.4rem 0.5rem 0.5rem 0.5rem;
+    }
+
+    .header-title {
+        font-size: 2.4rem;
+        white-space: nowrap;
+        overflow: visible;
+        max-width: 100%;
+        display: inline-block;
+    }
+
+    .header-content {
+        gap: 0.75rem;
+        padding: 0.5rem;
+    }
+
+    .header-boat {
+        width: 80px;
+    }
+
+    .card {
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .btn {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.85rem;
+    }
+
+    .result-value {
+        font-size: 1.75rem;
+    }
+
+    .mode-toggle-btn {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.95rem;
+    }
+}
+
+@media (min-width: 768px) {
+    .main-content {
+        max-width: 30rem;
+        /* Changed from 480px to rem to allow font-size scaling */
+        margin: 0 auto;
+        padding: 0.4rem 0.1rem 0.1rem 0.1rem;
+    }
+
+    .header-title {
+        font-size: 1.5rem;
+        white-space: nowrap;
+        overflow: visible;
+        max-width: 100%;
+        display: inline-block;
+    }
+
+    .header-content {
+        gap: 1rem;
+    }
+
+    .header-boat {
+        width: 120px;
+    }
+
+    .result-value {
+        font-size: 2.25rem;
+    }
+
+    .card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+}
+
+@media (max-width: 380px) {
+    .header-title {
+        font-size: 1.7rem;
+        /* Reduced from 2.2rem for Fold5 */
+        white-space: nowrap;
+        overflow: visible;
+        max-width: 100%;
+        display: inline-block;
+    }
+
+    .header-subtitle {
+        font-size: 1.1rem !important;
+    }
+
+    .header-content {
+        /* flex-direction: column; Retiré pour garder l'alignement horizontal */
+        gap: 0.25rem;
+    }
+
+    .header-boat {
+        width: 3.5rem;
+        /* ~56px */
+    }
+
+    .result-value {
+        font-size: 1.5rem;
+    }
+
+    .btn {
+        padding: 0.75rem 1rem;
+        font-size: 0.85rem;
+    }
+}
+
+@media (min-width: 381px) and (max-width: 450px) {
+    .header-title {
+        font-size: 1.9rem;
+        /* Reduced for iPhone 12 Pro */
+        white-space: nowrap;
+        overflow: visible;
+        max-width: 100%;
+        display: inline-block;
+    }
+
+    .header-boat {
+        width: 4rem;
+        /* ~64px */
+    }
+}
+
+/* Amélioration de la cohérence pour tous les écrans > 450px */
+@media (min-width: 451px) {
+    .header-title {
+        font-size: 2.4rem;
+        white-space: nowrap;
+        overflow: visible;
+        max-width: 100%;
+        display: inline-block;
+    }
+
+    .header-boat {
+        width: 5rem;
+        /* ~80px */
+    }
+
+    .result-value {
+        font-size: 1.6rem;
+    }
+
+    .card {
+        padding: 1.1rem;
+        margin-bottom: 0.8rem;
+    }
+}
+
+
+/* ============================================
+    16.1 CORRECTIONS POUR ÉCRANS TACTILES
+    ============================================ */
+/* Correction pour les boutons et éléments interactifs sur écrans tactiles */
+@media (hover: none) and (pointer: coarse) {
+
+    /* Pour les appareils tactiles (comme les téléphones) */
+    .btn {
+        min-height: 44px;
+        /* Minimum 44px pour touch targets */
+        min-width: 44px;
+    }
+
+    .mode-toggle-btn {
+        min-height: 44px;
+        padding: 0.7rem 0.5rem;
+    }
+
+    .input-field {
+        min-height: 44px;
+    }
+
+    /* Augmentation de la taille des zones cliquables */
+    .accordion-header {
+        min-height: 48px;
+    }
+
+    .share-btn {
+        min-height: 40px;
+        min-width: 40px;
+    }
+}
+
+:focus-visible {
+    outline: 2px solid var(--gold-500);
+    outline-offset: 2px;
+}
+
+/* ============================================
+    16.2 TABLETTE PORTRAIT SCALING
+    ============================================ */
+/* Augmente la taille de base pour les tablettes en mode portrait */
+@media (min-width: 768px) and (orientation: portrait) {
+    html {
+        font-size: 2.5vw;
+        /* Échelle fluide : 768px -> ~19px, 853px -> ~21px */
+    }
+
+    /* Limite supérieure pour éviter que ça devienne grotesque sur très grands écrans portrait */
+    @media (min-width: 1024px) {
+        html {
+            font-size: 25.6px;
+            /* Plafond */
+        }
+    }
+}
+
+/* ============================================
+    17. SELECT PERSONNALISÉ
+    ============================================ */
+select.input-field {
+    appearance: none;
+    cursor: pointer;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23d4af37' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+}
+
+select.input-field option {
+    background: var(--navy-800);
+    color: var(--white);
+}
+
+/* ============================================
+    18. COPIE RÉSULTAT
+    ============================================ */
+.copy-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(212, 175, 55, 0.2);
+    border: none;
+    color: var(--gold-400);
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    z-index: 1;
+}
+
+.copy-btn:hover {
+    background: rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+}
+
+
+.result-section {
+    position: relative;
+}
+
+/* ============================================
+    19. SECTION EXEMPLE
+    ============================================ */
+.example-section {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.375rem;
+    width: 100%;
+    min-width: 0;
+    position: relative;
+    top: -9px;
+    min-height: 40px;
+    justify-content: flex-start !important;
+}
+
+.example-btn-wrapper {
+    flex-shrink: 0;
+    margin-left: 0 !important;
+}
+
+/* .example-btn and related moved to index.html for performance and Marching Ants 2.0 implementation */
+
+.share-btn.native {
+    width: auto;
+    padding: 0 0.6rem;
+    background: var(--gradient-gold);
+    color: var(--navy-900);
+    border: none;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+}
+
+.current-example {
+    font-size: 0.9rem;
+    color: var(--gold-300);
+    font-weight: 700;
+    line-height: 1.4;
+    background: rgba(212, 175, 55, 0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--gold-500);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    flex: 1 1 auto;
+    min-width: 0;
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    position: relative;
+    top: -2px;
+
+    /* MODIFICATIONS POUR LE MARQUEE */
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.current-example:empty {
+    visibility: hidden;
+    min-height: 36px;
+}
+
+/* Alignement bouton Comparer (Mode Financier) */
+#financial-inputs .card {
+    margin-bottom: 0.5rem;
+    /* Augmenter l'espace sous la carte (était 0.2rem) */
+}
+
+#financial-inputs .btn-group {
+    top: 0;
+    /* Réinitialiser le décalage négatif */
+    margin-bottom: 0.5rem;
+    /* Assurer un espace égal en dessous */
+}
+
+/* .example-btn moved to index.html critical path */
+
+.example-btn i,
+.example-btn span {
+    position: relative;
+    z-index: 1;
+}
+
+.current-example {
+    font-size: 0.9rem;
+    color: var(--gold-300);
+    font-weight: 700;
+    line-height: 1.4;
+    background: rgba(212, 175, 55, 0.1);
+    padding: 0.4rem 0.8rem;
+    border-radius: var(--radius-md);
+    border: 2px solid var(--gold-500);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.15);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    position: relative;
+    top: -2px;
+
+    /* MODIFICATIONS POUR LE MARQUEE */
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.current-example .marquee-content {
+    display: inline-block;
+    /* Crucial pour la mesure scrollWidth en JS */
+    vertical-align: middle;
+}
+
+.current-example.scrolling .marquee-content {
+    display: inline-block;
+    /* Pas de padding-left, le texte commence immédiatement */
+    animation-play-state: running;
+}
+
+.current-example:empty {
+    display: none;
+}
+
+.share-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: -10px;
+}
+
+.share-btn {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gray-400);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-base);
+    font-size: 0.85rem;
+}
+
+.share-icon-img {
+    width: 1.25rem;
+    height: 1.25rem;
+    object-fit: contain;
+    filter: brightness(0) invert(1);
+}
+
+.share-btn:hover {
+    border-color: var(--gold-500);
+    color: var(--gold-400);
+    background: rgba(212, 175, 55, 0.1);
+    transform: translateY(-2px);
+}
+
+.share-btn:hover .share-icon-img {
+    /* Calibrage précis pour correspondre au Gold 400 (#e6c55a) avec une base neutre */
+    filter: brightness(0) invert(84%) sepia(35%) saturate(735%) hue-rotate(345deg) brightness(101%) contrast(92%);
+}
+
+/* All social buttons now use the same gold hover effect from the base .share-btn:hover */
+
+.share-btn.native {
+    width: auto;
+    padding: 0 0.6rem;
+    background: var(--gradient-gold);
+    color: var(--navy-900);
+    border: none;
+    font-size: 0.75rem;
+    gap: 0.35rem;
+}
+
+
+
+/* Alignement bouton Comparer (Mode Financier) */
+#financial-inputs .card {
+    margin-bottom: 0.3rem;
+    padding: 0.35rem !important;
+    gap: 0.35rem;
+    /* Réduit de 0.5rem à 0.3rem + padding et gap réduits */
+}
+
+#financial-inputs .btn-group {
+    top: -20px;
+    /* Remonter le bouton */
+    margin-bottom: -15px;
+    /* Réduit l'espace avec l'élément suivant (Méthodologie) */
+}
+
+#financial-inputs .result-section {
+    margin-top: 0;
+    /* Réinitialiser le décalage négatif */
+}
+
+.btn-group {
+    position: relative;
+    top: -10px;
+}
+
+.result-section {
+    margin-top: -5px;
+    opacity: 0;
+    animation: fadeInSlideUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.result-section:not(.hidden) {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+@keyframes fadeInSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.result-section::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+    height: 0 !important;
+}
+
+.result-card::after {
+    display: none !important;
+    content: none !important;
+    border: none !important;
+    height: 0 !important;
+}
+
+.share-section {
+    border-top: none !important;
+    padding-top: 0 !important;
+    margin-top: 20px !important;
+}
+
+.accordion {
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+.copy-btn {
+    top: 0.4rem !important;
+}
+
+/* Textes d'interprétation pour les résultats */
+.result-interpretation-header,
+.result-interpretation-footer {
+    text-align: center;
+    color: var(--gray-300);
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin: 0.25rem 0;
+}
+
+.result-interpretation-header {
+    margin: 0.1rem 0 0.3rem 0;
+}
+
+.result-interpretation-footer {
+    margin: 0;
+    color: var(--gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 1 auto;
+    padding: 0.2rem 0 0.2rem 0.4rem;
+    /* Un peu d'espace à gauche si sur la même ligne */
+    line-height: 1.2;
+}
+
+/* Capitalisation de la première lettre pour les libellés narratifs */
+.dropdown-option::first-letter,
+.result-interpretation-footer::first-letter,
+.trigger-text::first-letter {
+    text-transform: uppercase;
+}
+
+/* ============================================
+    21. GESTION DES MODES (Premium Transitions)
+    ============================================ */
+
+/* Conteneur principal */
+.modes-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto;
+    /* Allow height to adapt if needed, but overlap is key */
+    width: 100%;
+    position: relative;
+}
+
+/* Les deux modes occupent la même cellule (superposition) */
+.mode-content {
+    grid-column: 1;
+    grid-row: 1;
+    width: 100%;
+    /* Transition de base pour toutes les propriétés animées */
+    transition:
+        opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+
+    /* Point de pivot pour le scaling */
+    transform-origin: center top;
+
+    /* État initial (caché par défaut pour éviter le FOUC, géré par l'état parent) */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.92) translateX(0);
+    pointer-events: none;
+    /* Optimisation: saute le calcul du layout quand caché */
+    content-visibility: hidden;
+    contain-intrinsic-size: 0 500px;
+}
+
+/* --- ÉTAT 1: TEMPOREL ACTIF --- */
+.modes-container[data-active-mode="temporal"] #temporal-inputs {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateX(0);
+    pointer-events: auto;
+    transition:
+        opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    /* Instant visibility on start */
+    z-index: 10;
+    /* Réactiver le calcul du layout pour le mode actif */
+    content-visibility: visible;
+    contain-intrinsic-size: auto;
+}
+
+.modes-container[data-active-mode="temporal"] #financial-inputs {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95) translateX(60px);
+    /* Part vers la droite */
+    pointer-events: none;
+    z-index: 1;
+    /* Faster exit transition */
+    transition:
+        opacity 0.25s ease-out,
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* --- ÉTAT 2: FINANCIER ACTIF --- */
+.modes-container[data-active-mode="financial"] #financial-inputs {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateX(0);
+    pointer-events: auto;
+    transition:
+        opacity 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 10;
+    /* Réactiver le calcul du layout pour le mode actif */
+    content-visibility: visible;
+    contain-intrinsic-size: auto;
+}
+
+.modes-container[data-active-mode="financial"] #temporal-inputs {
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95) translateX(-60px);
+    /* Part vers la gauche */
+    pointer-events: none;
+    z-index: 1;
+    /* Faster exit transition */
+    transition:
+        opacity 0.25s ease-out,
+        transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Sections de résultat : flux normal en dessous de la grille */
+.modes-container>.result-section {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    margin-top: 1rem;
+}
+
+/* Sections de résultat à l'intérieur du modes-container - ne pas participer à la grille */
+.modes-container>.result-section {
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+}
+
+/* ============================================
+    22. DROPDOWNS PERSONNALISÉS
+    ============================================ */
+
+.custom-dropdown {
+    position: relative;
+    width: 100%;
+    z-index: 5;
+}
+
+.custom-dropdown.open {
+    z-index: 1001;
+}
+
+/* Fix stacking context: ensure the card containing an open dropdown is above subsequent elements */
+.card:has(.custom-dropdown.open) {
+    z-index: 9999 !important;
+    position: relative !important;
+}
+
+.dropdown-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all var(--transition-base);
+    color: var(--white);
+}
+
+.dropdown-trigger:hover {
+    border-color: var(--gold-400);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.trigger-text {
+    font-size: 0.9rem;
+    color: var(--gray-300);
+    font-weight: 600;
+}
+
+.trigger-icon {
+    transition: transform var(--transition-base);
+    color: var(--gray-400);
+}
+
+.custom-dropdown.open .trigger-icon {
+    transform: rotate(180deg);
+}
+
+.dropdown-options {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+    background: var(--navy-800);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    max-height: 300px;
+    z-index: 1000;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none; /* Empêche les clics parasites quand le dropdown se ferme */
+    transform: translateY(-10px);
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.dropdown-options::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+}
+
+.dropdown-options::-webkit-scrollbar-button,
+.dropdown-options::-webkit-scrollbar-track,
+.dropdown-options::-webkit-scrollbar-track-piece,
+.dropdown-options::-webkit-scrollbar-thumb,
+.dropdown-options::-webkit-scrollbar-corner {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+    -webkit-appearance: none !important;
+}
+
+.custom-scrollbar {
+    position: absolute;
+    top: 8px;
+    right: 4px;
+    width: 10px;
+    height: calc(100% - 16px);
+    background: transparent;
+    border-radius: 5px;
+    pointer-events: auto;
+    z-index: 10;
+    cursor: pointer;
+}
+
+.custom-scrollbar-thumb {
+    position: absolute;
+    top: 0;
+    left: 2px;
+    width: 6px;
+    background: var(--gold-500);
+    border-radius: 3px;
+    box-shadow: 0 0 8px rgba(212, 175, 55, 0.6);
+    transition: background 0.2s ease;
+    min-height: 40px;
+}
+
+.custom-scrollbar-thumb:hover {
+    background: var(--gold-400);
+}
+
+.custom-dropdown.open .dropdown-options {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto; /* Permet les clics sur les options quand le dropdown est ouvert */
+    transform: translateY(0);
+}
+
+.dropdown-option {
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    font-size: 0.9rem;
+    color: var(--gray-300);
+    font-weight: 600;
+}
+
+.dropdown-option:last-child {
+    border-bottom: none;
+}
+
+.dropdown-option:hover {
+    background: rgba(212, 175, 55, 0.1);
+    color: var(--gold-400);
+}
+
+.dropdown-option.selected {
+    background: rgba(212, 175, 55, 0.2);
+    color: var(--gold-400);
+}
+
+/* Select natif caché */
+.hidden-select {
+    display: none;
+}
+
+/* ============================================
+    23. CLASSES UTILITAIRES
+    ============================================ */
+
+/* Margin utilities */
+.mr-1 {
+    margin-right: 0.25rem;
+}
+
+.mt-1 {
+    margin-top: 0.25rem;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}
+
+.mt-3 {
+    margin-top: 0.75rem;
+}
+
+/* Display utilities */
+.hidden {
+    display: none !important;
+}
+
+/* Container utility */
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}
+
+/* Text utilities */
+.italic {
+    font-style: italic;
+}
+
+/* Transform utility */
+/* ============================================
+    24. FOOTER STYLES
+    ============================================ */
+
+.app-footer {
+    margin-top: 0.25rem;
+    /* Reduced from 0.75rem */
+    padding: 0.5rem 0;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.footer-link {
+    color: var(--gray-400);
+    text-decoration: none;
+    font-size: 0.85rem;
+    display: inline-block;
+    transition: all var(--transition-base);
+}
+
+.footer-link:hover {
+    color: var(--gold-400);
+    text-shadow: 0 4px 12px rgba(212, 175, 55, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px);
+}
+
+/* Critical start-up animations moved to index.html */
+
+/* Animation pulse doux pour attirer l'attention */
+@keyframes gentlePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+
+/* Classe pour cacher initialement le mode financier sans animation */
+
+
+/* ============================================
+    ANIMATIONS PREMIUM - MODULES FACILEMENT ACTIVABLES
+    ============================================
+    
+    POUR ACTIVER UNE ANIMATION : ajoutez la classe correspondante à l'élément HTML
+    POUR DESACTIVER : retirez la classe
+    
+    Toutes ces animations sont compatibles entre elles
+*/
+
+
+
+/* ----------------------------------------
+    5. MARQUEE SCROLL - Défilement horizontal automatique pour texte trop long
+    Classe à ajouter : .scrolling
+    Compatible avec : toutes les autres
+    ---------------------------------------- */
+@keyframes marqueeScroll {
+
+    0%,
+    30% {
+        transform: translateX(0);
+        /* Pause de 30% au début */
+    }
+
+    70%,
+    100% {
+        transform: translateX(var(--scroll-distance, -100%));
+        /* Pause de 30% à la fin */
+    }
+}
+
+.marquee-content {
+    display: inline-block;
+    white-space: nowrap;
+    animation: marqueeScroll 4s ease-in-out infinite alternate paused;
+    will-change: transform;
+}
+
+/* ----------------------------------------
+    4. SHIMMER BUTTON - Reflet lumineux sur les boutons
+    Classe à ajouter : .shimmer-btn
+    Compatible avec : toutes les autres
+    ---------------------------------------- */
+@keyframes shimmer {
+    0% {
+        transform: translateX(-120%);
+    }
+
+    100% {
+        transform: translateX(120%);
+    }
+}
+
+.shimmer-btn {
+    position: relative;
+    overflow: hidden;
+    background: var(--gold-500);
+}
+
+.shimmer-btn::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.2) 40%,
+            rgba(255, 255, 255, 0.7) 50%,
+            rgba(255, 255, 255, 0.2) 60%,
+            transparent 100%);
+    transform: translateX(-120%);
+    animation: shimmer 3s ease-in-out infinite;
+    will-change: transform;
+    pointer-events: none;
+}
+
+/* ----------------------------------------
+   3b. TITLE SHIMMER - Reflet lumineux sur les lettres du titre
+   Classe à ajouter : .title-shimmer
+   Compatible avec : title-glow
+   ---------------------------------------- */
+@keyframes titleShimmerPulse {
+    0% {
+        opacity: 0.25;
+    }
+
+    50% {
+        opacity: 0.85;
+    }
+
+    100% {
+        opacity: 0.25;
+    }
+}
+
+.title-shimmer {
+    position: relative;
+}
+
+.title-shimmer::after {
+    content: attr(data-text);
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg,
+            transparent 0%,
+            rgba(255, 255, 255, 0.35) 40%,
+            rgba(255, 255, 255, 0.85) 50%,
+            rgba(255, 255, 255, 0.35) 60%,
+            transparent 100%);
+    background-size: 100% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    opacity: 0.25;
+    animation: titleShimmerPulse 2.8s ease-in-out infinite;
+    will-change: opacity;
+    pointer-events: none;
+}

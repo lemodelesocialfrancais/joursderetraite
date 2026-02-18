@@ -1,0 +1,1424 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+
+<head>
+    <!-- Meta Tags & SEO -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <link rel="preload" href="bateaucroisiere.webp" as="image" fetchpriority="high">
+    <link rel="preload" href="style.css" as="style">
+    <meta name="description"
+        content="Combien de temps représente un montant en années, mois, jours de retraites versées en France ?">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#0a192f">
+    <title>Jours de Retraite</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+    <style>
+        /* Critical CSS for LCP and Layout Stability */
+        html,
+        body {
+            background: #0a192f;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 
+           OPTIMIZED ANIMATIONS 
+           Uses only transform & opacity for 60fps on mobile 
+        */
+
+        /* 1. Bubbles Background */
+        .bubbles {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: -1;
+            /* Placed behind content to avoid LCP interference */
+            transform: translateZ(0);
+            /* Force GPU */
+        }
+
+        .bubble {
+            position: absolute;
+            bottom: -20px;
+            background: radial-gradient(circle at 30% 30%, rgba(212, 175, 55, 0.2), transparent);
+            border-radius: 50%;
+            will-change: transform, opacity;
+            animation: rise 8s infinite ease-in;
+        }
+
+        .bubble:nth-child(1) {
+            width: 10px;
+            height: 10px;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .bubble:nth-child(2) {
+            width: 6px;
+            height: 6px;
+            left: 30%;
+            animation-delay: 2s;
+        }
+
+        .bubble:nth-child(3) {
+            width: 14px;
+            height: 14px;
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        .bubble:nth-child(4) {
+            width: 8px;
+            height: 8px;
+            left: 70%;
+            animation-delay: 1s;
+        }
+
+        .bubble:nth-child(5) {
+            width: 12px;
+            height: 12px;
+            left: 85%;
+            animation-delay: 3s;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 0.6;
+            }
+
+            100% {
+                transform: translateY(-100vh) scale(0.5);
+                opacity: 0;
+            }
+        }
+
+        /* 2. Entrance Animations (No Blur) */
+        .fade-in {
+            opacity: 0;
+            animation: fadeIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            will-change: opacity;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .fade-in-slide-up {
+            opacity: 0;
+            animation: fadeInSlideUp 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+            will-change: transform, opacity;
+            transform: translateY(20px);
+            /* Hardware acceleration hint handled by browser usually, but good to be explicit for start state */
+        }
+
+        @keyframes fadeInSlideUp {
+            0% {
+                opacity: 0;
+                transform: translateY(20px) scale(0.98);
+            }
+
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* 3. Title Reveal - Optimized for LCP (applied via JS after first paint) */
+        .title-reveal-optimized {
+            display: inline-block;
+            will-change: transform;
+            animation: titleRevealOptimized 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes titleRevealOptimized {
+            0% {
+                transform: scale(1);
+            }
+            40% {
+                transform: scale(1.03);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* 4. Boat Animation - Applied via JS after LCP */
+        .header-boat {
+            opacity: 1;
+            transform-origin: bottom left;
+            will-change: transform;
+            /* No animation at load for LCP optimization */
+        }
+
+        .header-boat.animate {
+            animation: boatSail 1.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        @keyframes boatSail {
+            0% {
+                transform: translateX(-36px) rotate(-18deg) scale(0.95);
+            }
+
+            100% {
+                transform: translateX(0) rotate(0deg) scale(1);
+            }
+        }
+
+        /* 5. Staggered Delays */
+        .reveal-1 {
+            animation-delay: 0.1s;
+        }
+
+        .reveal-2 {
+            animation-delay: 0.2s;
+        }
+
+        .reveal-3 {
+            animation-delay: 0.3s;
+        }
+
+        .reveal-4 {
+            animation-delay: 0.4s;
+        }
+
+        .reveal-5 {
+            animation-delay: 0.5s;
+        }
+
+        .reveal-6 {
+            animation-delay: 0.6s;
+        }
+
+        .reveal-7 {
+            animation-delay: 0.7s;
+        }
+
+        .reveal-8 {
+            animation-delay: 0.8s;
+        }
+
+        /* Marching Ants - SVG + JS Solution */
+        .example-btn {
+            background-color: rgba(212, 175, 55, 0.05);
+            border: none;
+            color: #d4af37;
+            padding: 0 0.6rem;
+            height: 32px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            border-radius: 11px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .example-btn-wrapper {
+            position: relative;
+            display: inline-flex;
+            transition: all var(--transition-base);
+        }
+
+        .example-btn-wrapper:hover {
+            transform: translateY(-2px);
+        }
+
+        .example-btn-border-svg {
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            pointer-events: none;
+            z-index: 1;
+            overflow: visible;
+        }
+
+        .example-btn-border-svg path {
+            fill: none;
+            stroke: #d4af37;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+        }
+
+        .example-btn:hover {
+            background-color: rgba(212, 175, 55, 0.15) !important;
+            color: #f0d78c !important;
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .example-btn:active {
+            transform: translateY(1px);
+        }
+
+        .example-btn svg:not(.example-btn-border),
+        .example-btn span {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Shimmer Effect - Critical for "Calculer" button */
+        @keyframes shimmer {
+            0% {
+                transform: translateX(-150%);
+            }
+
+            100% {
+                transform: translateX(150%);
+            }
+        }
+
+        .shimmer-btn {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .shimmer-btn::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.1) 40%,
+                    rgba(255, 255, 255, 0.5) 50%,
+                    rgba(255, 255, 255, 0.1) 60%,
+                    transparent 100%);
+            transform: translateX(-150%);
+            animation: shimmer 3s infinite;
+            will-change: transform;
+            pointer-events: none;
+        }
+
+        /* ============================================
+            CRITICAL CSS - Variables & Layout
+            ============================================ */
+        :root {
+            color-scheme: dark;
+            --navy-900: #0a192f;
+            --navy-800: #112240;
+            --gold-500: #d4af37;
+            --gold-400: #e6c55a;
+            --white: #ffffff;
+            --gray-400: #8892b0;
+            --gray-500: #adb5bd;
+            --gradient-navy: linear-gradient(180deg, var(--navy-900) 0%, var(--navy-800) 100%);
+            --gradient-gold: linear-gradient(135deg, var(--gold-500) 0%, var(--gold-400) 50%, #f0d78c 100%);
+            --gradient-card: linear-gradient(145deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+            --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+            --shadow-gold: 0 4px 20px rgba(212, 175, 55, 0.3);
+            --shadow-glow: 0 0 30px rgba(212, 175, 55, 0.2);
+            --transition-base: 400ms cubic-bezier(0.2, 0.8, 0.2, 1);
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+            --radius-xl: 28px;
+        }
+
+        *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--gradient-navy) !important;
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            max-width: 100vw;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 0.4rem 0.1rem 0.1rem 0.1rem;
+        }
+
+        .header {
+            padding: 0;
+            position: relative;
+            flex-shrink: 0;
+            margin-bottom: 0.2rem;
+        }
+
+        .header-content {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.25rem;
+            overflow: visible;
+            margin-left: -0.5rem;
+            margin-top: 0;
+        }
+
+        .header-boat-wrap {
+            position: relative;
+            display: inline-block;
+            will-change: transform;
+            transform: translateZ(0);
+        }
+
+        .header-boat {
+            width: 45px;
+            height: auto;
+            flex-shrink: 0;
+        }
+
+        .header-title {
+            font-size: 2.4rem;
+            font-weight: 700;
+            background: var(--gradient-gold);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+            margin-bottom: 0;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: visible;
+            max-width: 100%;
+            display: inline-block;
+            position: relative;
+        }
+
+        .header-subtitle {
+            font-size: 1.1rem !important;
+            color: var(--gray-400);
+            font-weight: 400;
+            line-height: 1.2;
+            display: block;
+        }
+
+        .card {
+            background: var(--gradient-card);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: var(--radius-lg);
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-md);
+        }
+
+        .card-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--gold-400);
+            margin-bottom: 0.25rem;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-wrapper .input-icon {
+            position: absolute;
+            left: 0.6rem;
+            color: var(--gray-500);
+            pointer-events: none;
+            width: 16px;
+            height: 16px;
+            z-index: 1;
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem 0.5rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+            color: var(--white);
+            background: rgba(255, 255, 255, 0.05);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--radius-md);
+            outline: none;
+            transition: all var(--transition-base);
+        }
+
+        .input-field::placeholder {
+            color: var(--gray-500);
+            font-weight: 400;
+        }
+
+        .input-field:focus {
+            border-color: var(--gold-500);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .input-field:focus + .input-icon {
+            color: var(--gold-400);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition-base);
+            white-space: nowrap;
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--white);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+            color: var(--white);
+            border-color: rgba(212, 175, 55, 0.3);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.4rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .btn-group .btn {
+            flex: 1;
+        }
+
+        .mode-toggle {
+            display: flex;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-lg);
+            padding: 0.25rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .mode-toggle-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: transparent;
+            border: none;
+            border-radius: var(--radius-md);
+            color: var(--gray-400);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .mode-toggle-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .modes-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+
+        .mode-content {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .result-section {
+            margin-top: 0.75rem;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, rgba(11, 22, 40, 0.8) 0%, rgba(10, 25, 47, 0.9) 100%), var(--gradient-gold);
+            border: 3px solid transparent;
+            border-radius: var(--radius-lg);
+            padding: 0.5rem 0.75rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--gold-400);
+            margin-bottom: 0.1rem;
+        }
+
+        .result-value {
+            color: var(--gold-400);
+            width: 100%;
+        }
+
+        .share-section {
+            margin-top: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .share-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            justify-content: center;
+        }
+
+        .share-btn {
+            width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--gray-400);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .share-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--gold-400);
+            transform: translateY(-2px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .mr-1 {
+            margin-right: 0.25rem;
+        }
+
+        .mt-1 {
+            margin-top: 0.25rem;
+        }
+
+        .mt-2 {
+            margin-top: 0.5rem;
+        }
+
+        .mt-3 {
+            margin-top: 0.75rem;
+        }
+
+        .copy-btn {
+            position: absolute;
+            top: 0.4rem;
+            right: 0.4rem;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            border-radius: var(--radius-sm);
+            color: var(--gray-400);
+            cursor: pointer;
+            transition: all var(--transition-base);
+        }
+
+        .copy-btn:hover {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--gold-400);
+        }
+
+        .current-example {
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            text-align: center;
+            margin-top: 0.25rem;
+            min-height: 1.2em;
+        }
+
+        .example-section {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.5rem;
+            margin-bottom: 0.3rem;
+            width: 100%;
+        }
+
+        .example-btn-wrapper {
+            position: relative;
+            display: inline-flex;
+        }
+
+        .share-icon-img {
+            width: 16px;
+            height: 16px;
+            object-fit: contain;
+        }
+
+        @media (min-width: 768px) {
+            .header-boat {
+                width: 60px;
+            }
+        }
+    </style>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://lemodelesocialfrancais.github.io/joursderetraite/">
+    <meta property="og:title" content="Jours de Retraite">
+    <meta property="og:description"
+        content="Découvrez l'équivalent temps de cotisations de retraite pour n'importe quel montant.">
+    <meta property="og:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png">
+    <meta property="og:image:width" content="512">
+    <meta property="og:image:height" content="512">
+    <meta property="og:image:alt" content="Icône de l'application Jours de Retraite">
+    <meta property="og:site_name" content="Jours de Retraite">
+    <meta property="og:locale" content="fr_FR">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://lemodelesocialfrancais.github.io/joursderetraite/">
+    <meta name="twitter:title" content="Jours de Retraite">
+    <meta name="twitter:description"
+        content="Découvrez l'équivalent temps de cotisations de retraite pour n'importe quel montant.">
+    <meta name="twitter:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png">
+    <meta name="twitter:image:alt" content="Icône de l'application Jours de Retraite">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
+    <script type="module" src="js/main.js"></script>
+    <link rel="manifest" href="manifest.json">
+
+    <!-- iOS & Android PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Jours Retraite">
+    <link rel="apple-touch-icon" href="icon-192x192.png">
+    <link rel="apple-touch-startup-image" href="apple-splash.png">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Bulles décoratives -->
+        <div class="bubbles">
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+            <div class="bubble"></div>
+        </div>
+
+        <main class="main-content">
+            <!-- Header avec bateau stylisé -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="header-boat-wrap">
+                        <img src="bateaucroisiere.webp" alt="Bateau de croisière" class="header-boat" width="64"
+                            height="64" decoding="async" />
+                    </div>
+                    <div class="header-text">
+                        <h1 class="header-title" data-text="Jours de Retraite">Jours de
+                            Retraite</h1>
+                        <p class="header-subtitle fade-in-slide-up reveal-1">Découvrez les équivalents des retraites
+                            versées en France en 2025</p>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Toggle de mode -->
+            <div class="mode-toggle fade-in-slide-up reveal-2" data-active="temporal">
+                <div class="mode-toggle-pill"></div>
+                <button id="temporal-mode-btn" class="mode-toggle-btn active" onclick="switchMode('temporal')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="mr-1">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                    </svg>Temporel
+                </button>
+                <button id="financial-mode-btn" class="mode-toggle-btn" onclick="switchMode('financial')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                        class="mr-1">
+                        <path d="M3 3v18h18" />
+                        <path d="m19 9-5 5-4-4-3 3" />
+                    </svg>Financier
+                </button>
+            </div>
+
+            <div class="modes-container" data-active-mode="temporal">
+                <!-- MODE TEMPOREL -->
+                <div id="temporal-inputs" class="mode-content">
+                    <!-- Carte montant -->
+                    <div class="card fade-in-slide-up card-sheen reveal-3">
+                        <div class="card-label"> Montant à convertir</div>
+                        <div class="input-wrapper">
+                            <input type="text" inputmode="numeric" pattern="[0-9.,]*" id="amount"
+                                placeholder="Ex: 24 000 000" class="input-field"
+                                oninput="allowOnlyNumbersAndComma(this); formatNumberInput(this); handleInput()"
+                                onblur="formatNumberOnBlur(this)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="input-icon">
+                                <path d="M4 10h12" />
+                                <path d="M4 14h9" />
+                                <path
+                                    d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <!-- Bouton exemple -->
+                    <div class="example-section fade-in-slide-up reveal-4">
+                        <div class="example-btn-wrapper" style="order: 1;">
+                            <svg class="example-btn-border-svg">
+                                <path class="marching-path" d="" />
+                            </svg>
+                            <button class="example-btn" onclick="setRandomExample()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="mr-1">
+                                    <path
+                                        d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                                    <path d="M8 12h8" />
+                                    <path d="M8 16h6" />
+                                </svg>
+                                <span>Charger un exemple</span>
+                            </button>
+                        </div>
+                        <p id="current-example" class="current-example" style="order: 2;"></p>
+                    </div>
+
+                    <!-- Bouton calculer -->
+                    <div class="fade-in-slide-up reveal-5" style="width: 100%;">
+                        <div class="btn-group">
+                            <button class="btn btn-primary shimmer-btn"
+                                onclick="formatNumberOnBlur(document.getElementById('amount')); calculate();">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="mr-1">
+                                    <rect width="16" height="20" x="4" y="2" rx="2" />
+                                    <line x1="8" x2="16" y1="6" y2="6" />
+                                    <line x1="16" x2="16" y1="14" y2="18" />
+                                    <path d="M16 10h.01" />
+                                    <path d="M12 10h.01" />
+                                    <path d="M8 10h.01" />
+                                    <path d="M12 14h.01" />
+                                    <path d="M8 14h.01" />
+                                    <path d="M12 18h.01" />
+                                    <path d="M8 18h.01" />
+                                </svg>
+                                Calculer
+                            </button>
+                            <button class="btn btn-secondary" onclick="resetForm()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="mr-1">
+                                    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+                                    <path d="M21 3v5h-5" />
+                                    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+                                    <path d="M3 21v-5h5" />
+                                </svg>
+                                Réinitialiser
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Résultat temporel -->
+                    <div id="result-section-temporal" class="result-section hidden">
+                        <div class="result-card">
+                            <button class="copy-btn" onclick="copyResult('temporal')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                </svg>
+                            </button>
+                            <div class="result-label">⏱️ Équivalent retraite</div>
+                            <div id="result-text-temporal" class="result-value"></div>
+
+                        </div>
+
+                        <div id="share-section-temporal" class="share-section">
+                            <div class="share-buttons">
+                                <button class="share-btn facebook" onclick="shareOnSocial('facebook')" title="Facebook">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn twitter" onclick="shareOnSocial('twitter')" title="X">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn whatsapp" onclick="shareOnSocial('whatsapp')" title="WhatsApp">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn telegram" onclick="shareOnSocial('telegram')" title="Telegram">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M2.116 11.075l19.047-7.348c.885-.34 1.658.216 1.375 1.514l-3.239 15.27c-.241 1.137-.928 1.126-1.523.5l-4.234-3.928-2.041 1.964c-.226.226-.416.416-.852.416l.303-4.312 7.833-7.074c.34-.303-.074-.462-.527-.159l-9.68 6.093-4.174-1.302c-.907-.288-.926-.907.192-1.344z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn messenger" onclick="shareOnSocial('messenger')" title="Messenger">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.301 2.246.464 3.443.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.259L19.752 8l-6.561 6.963z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn pinterest" onclick="shareOnSocial('pinterest')" title="Pinterest">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn linkedin" onclick="shareOnSocial('linkedin')" title="LinkedIn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                        <rect width="4" height="12" x="2" y="9" />
+                                        <circle cx="4" cy="4" r="2" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn" onclick="shareVia('email')" title="Email">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn" onclick="shareVia('sms')" title="SMS">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn native" onclick="nativeShare('temporal')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="mr-1">
+                                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                                        <polyline points="16 6 12 2 8 6" />
+                                        <line x1="12" x2="12" y1="2" y2="15" />
+                                    </svg>
+                                    <span>Partager</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MODE FINANCIER -->
+                <div id="financial-inputs" class="mode-content" hidden>
+                    <div class="card fade-in-slide-up card-sheen">
+                        <div class="card-label">🏷️ Type de comparaison</div>
+                        <div class="input-wrapper">
+                            <div class="custom-dropdown" id="object-type-dropdown">
+                                <div class="dropdown-trigger" id="object-type-trigger">
+                                    <span class="trigger-text">Sélectionnez un objet...</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="trigger-icon">
+                                        <path d="m6 9 6 6 6-6" />
+                                    </svg>
+                                </div>
+                                <div class="dropdown-options" id="object-type-options">
+                                    <!-- Options peuplées dynamiquement depuis examples.js -->
+                                    <div class="dropdown-option" data-value="autre">Objet personnalisé</div>
+                                </div>
+                            </div>
+                            <!-- Native select hidden - still used for logic compatibility -->
+                            <select id="object-type" class="hidden-select" onchange="updateObjectPrice()">
+                                <!-- Option vide supprimée pour synchroniser les index avec le dropdown personnalisé -->
+                                <option value="autre">Objet personnalisé</option>
+                                <!-- Options peuplées dynamiquement depuis examples.js -->
+                            </select>
+                        </div>
+
+                        <div id="custom-object-input" class="hidden">
+                            <input type="text" id="object-name" placeholder="Nom de l'objet" class="input-field"
+                                style="padding-left: 1rem;">
+                        </div>
+
+                        <div class="card-label">💵 Montant à convertir</div>
+                        <div class="input-wrapper">
+                            <input type="text" inputmode="numeric" id="object-price" placeholder="24 000 000"
+                                class="input-field" oninput="allowOnlyNumbersAndComma(this); formatNumberInput(this)"
+                                onblur="formatNumberOnBlur(this)">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="input-icon">
+                                <path d="M4 10h12" />
+                                <path d="M4 14h9" />
+                                <path
+                                    d="M19 6a7.7 7.7 0 0 0-5.2-2A7.9 7.9 0 0 0 6 12c0 4.4 3.5 8 7.8 8 2 0 3.8-.8 5.2-2" />
+                            </svg>
+                        </div>
+
+                        <!-- Champ Période de retraite (Masqué par défaut mais fonctionnel = 1 an) -->
+                        <div id="retirement-period-container" style="display: none;">
+                            <div class="card-label">📅 Période de retraite</div>
+                            <div class="input-wrapper">
+                                <select id="time-period" class="input-field">
+                                    <option value="1">1 an</option>
+                                    <option value="0.5">6 mois</option>
+                                    <option value="0.25">3 mois</option>
+                                    <option value="0.1">1 mois</option>
+                                    <option value="0.033">10 jours</option>
+                                    <option value="0.01">1 jour</option>
+                                    <option value="custom">Personnalisé...</option>
+                                </select>
+                            </div>
+
+                            <div id="custom-period-container" class="hidden">
+                                <input type="text" inputmode="numeric" id="custom-period" placeholder="Durée en années"
+                                    class="input-field" value="1">
+                            </div>
+                        </div>
+
+                        <!-- Bouton Comparer déplacé ici -->
+                        <div class="btn-group" style="margin-top: 1.5rem;">
+                            <button class="btn btn-primary shimmer-btn" onclick="calculateComparison()">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="mr-1">
+                                    <path d="m21 7-4-4-4 4" />
+                                    <path d="M17 3v18" />
+                                    <path d="m3 17 4 4 4-4" />
+                                    <path d="M7 21V3" />
+                                </svg>
+                                Comparer
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Résultat financier -->
+                    <div id="result-section-financial" class="result-section hidden">
+                        <div class="result-card">
+                            <button class="copy-btn" onclick="copyResult('financial')">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                    <rect width="14" height="14" x="8" y="8" rx="2" ry="2" />
+                                    <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2" />
+                                </svg>
+                            </button>
+                            <div class="result-label">📊 Équivalent financier</div>
+                            <div id="result-text-financial" class="result-value"></div>
+                            <div id="comparison-result-text-financial" class="hidden"></div>
+                        </div>
+
+                        <div id="share-section-financial" class="share-section">
+                            <div class="share-buttons">
+                                <button class="share-btn facebook" onclick="shareOnSocial('facebook')" title="Facebook">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn twitter" onclick="shareOnSocial('twitter')" title="X">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M22 4s-.7 2.1-2 3.4c1.6 10-9.4 17.3-18 11.6 2.2.1 4.4-.6 6-2C3 15.5.5 9.6 3 5c2.2 2.6 5.6 4.1 9 4-.9-4.2 4-6.6 7-3.8 1.1 0 3-1.2 3-1.2z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn whatsapp" onclick="shareOnSocial('whatsapp')" title="WhatsApp">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn telegram" onclick="shareOnSocial('telegram')" title="Telegram">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M2.116 11.075l19.047-7.348c.885-.34 1.658.216 1.375 1.514l-3.239 15.27c-.241 1.137-.928 1.126-1.523.5l-4.234-3.928-2.041 1.964c-.226.226-.416.416-.852.416l.303-4.312 7.833-7.074c.34-.303-.074-.462-.527-.159l-9.68 6.093-4.174-1.302c-.907-.288-.926-.907.192-1.344z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn messenger" onclick="shareOnSocial('messenger')" title="Messenger">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.373 0 0 4.974 0 11.111c0 3.498 1.744 6.614 4.469 8.654V24l4.088-2.242c1.092.301 2.246.464 3.443.464 6.627 0 12-4.975 12-11.111S18.627 0 12 0zm1.191 14.963l-3.055-3.26-5.963 3.26L10.732 8l3.131 3.259L19.752 8l-6.561 6.963z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn pinterest" onclick="shareOnSocial('pinterest')" title="Pinterest">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 0C5.373 0 0 5.372 0 12c0 5.084 3.163 9.426 7.627 11.174-.105-.949-.2-2.405.042-3.441.218-.937 1.407-5.965 1.407-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.262 7.929-7.262 4.163 0 7.398 2.967 7.398 6.931 0 4.136-2.607 7.464-6.227 7.464-1.216 0-2.359-.632-2.75-1.378l-.748 2.853c-.271 1.043-1.002 2.35-1.492 3.146C9.57 23.812 10.763 24 12 24c6.627 0 12-5.373 12-12 0-6.628-5.373-12-12-12z"/>
+                                    </svg>
+                                </button>
+                                <button class="share-btn linkedin" onclick="shareOnSocial('linkedin')" title="LinkedIn">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <path
+                                            d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z" />
+                                        <rect width="4" height="12" x="2" y="9" />
+                                        <circle cx="4" cy="4" r="2" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn" onclick="shareVia('email')" title="Email">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round">
+                                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn" onclick="shareVia('sms')" title="SMS">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="currentColor">
+                                        <path
+                                            d="M20 2H4a2 2 0 0 0-2 2v18l4-4h14a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM9 11H7V9h2v2zm4 0h-2V9h2v2zm4 0h-2V9h2v2z" />
+                                    </svg>
+                                </button>
+                                <button class="share-btn native" onclick="nativeShare('financial')">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                        fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                        stroke-linejoin="round" class="mr-1">
+                                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                                        <polyline points="16 6 12 2 8 6" />
+                                        <line x1="12" x2="12" y1="2" y2="15" />
+                                    </svg>
+                                    <span>Partager</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Accordéon Méthodologie -->
+            <div class="fade-in-slide-up reveal-6" style="width: 100%;">
+                <div class="accordion" id="methodology-section">
+                    <div class="accordion-header" onclick="toggleMethodology()">
+                        <span class="accordion-title">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"
+                                fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                stroke-linejoin="round" class="methodology-icon mr-1">
+                                <rect width="16" height="20" x="4" y="2" rx="2" />
+                                <line x1="8" x2="16" y1="6" y2="6" />
+                                <line x1="16" x2="16" y1="14" y2="18" />
+                                <path d="M16 10h.01" />
+                                <path d="M12 10h.01" />
+                                <path d="M8 10h.01" />
+                                <path d="M12 14h.01" />
+                                <path d="M8 14h.01" />
+                                <path d="M12 18h.01" />
+                                <path d="M8 18h.01" />
+                            </svg>
+                            Méthodologie
+                        </span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                            class="accordion-icon">
+                            <path d="m6 9 6 6 6-6" />
+                        </svg>
+                    </div>
+
+                    <div class="accordion-content">
+                        <div class="accordion-body">
+                            <div class="infography">
+                                <svg viewBox="0 0 320 110" preserveAspectRatio="xMidYMid meet">
+                                    <!-- Styles internes pour SVG -->
+                                    <style>
+                                        .step-box {
+                                            fill: rgba(255, 255, 255, 0.05);
+                                            stroke: rgba(255, 255, 255, 0.1);
+                                            stroke-width: 1;
+                                            rx: 8;
+                                        }
+
+                                        .step-label {
+                                            font-size: 9px;
+                                            fill: var(--gray-400);
+                                            font-weight: 600;
+                                            text-transform: uppercase;
+                                        }
+
+                                        .step-value {
+                                            font-size: 12px;
+                                            fill: var(--white);
+                                            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+                                            font-weight: 700;
+                                        }
+
+                                        .operator {
+                                            font-size: 14px;
+                                            fill: var(--gold-400);
+                                            font-weight: bold;
+                                        }
+
+                                        .final-box {
+                                            fill: rgba(212, 175, 55, 0.1);
+                                            stroke: var(--gold-400);
+                                            stroke-width: 2;
+                                            rx: 8;
+                                        }
+
+                                        .arrow {
+                                            stroke: var(--gold-400);
+                                            stroke-width: 1.5;
+                                            marker-end: url(#arrowHead);
+                                        }
+                                    </style>
+
+                                    <defs>
+                                        <marker id="arrowHead" markerWidth="6" markerHeight="6" refX="5" refY="3"
+                                            orient="auto">
+                                            <path d="M0,0 L6,3 L0,6 Z" fill="#d4af37" />
+                                        </marker>
+                                    </defs>
+
+                                    <!-- Étape 1: Montant -->
+                                    <rect x="5" y="15" width="85" height="50" class="step-box" />
+                                    <text x="47.5" y="35" text-anchor="middle" class="step-label">MONTANT</text>
+                                    <text x="47.5" y="53" text-anchor="middle" class="step-value" fill="#d4af37">X
+                                        €</text>
+
+                                    <!-- Opérateur / -->
+                                    <text x="100" y="45" text-anchor="middle" class="operator">÷</text>
+
+                                    <!-- Étape 2: Total -->
+                                    <rect x="110" y="15" width="90" height="50" class="step-box" />
+                                    <text x="155" y="35" text-anchor="middle" class="step-label">TOTAL</text>
+                                    <text x="155" y="53" text-anchor="middle" class="step-value">420 Mds €</text>
+
+                                    <!-- Opérateur = -->
+                                    <line x1="210" y1="40" x2="225" y2="40" class="arrow" />
+
+                                    <!-- Étape 3: Résultat -->
+                                    <rect x="235" y="10" width="80" height="60" class="final-box" />
+                                    <text x="275" y="33" text-anchor="middle" class="step-label"
+                                        style="fill: var(--gold-400);">DURÉE</text>
+                                    <text x="275" y="55" text-anchor="middle" class="step-value"
+                                        style="font-size: 14px; fill: var(--gold-400);">XX Jours</text>
+
+                                    <!-- Annotation explicative bas -->
+                                    <text x="160" y="85" text-anchor="middle" font-size="9" fill="#6c757d"
+                                        font-style="italic">
+                                        (Montant / 420 Milliards) × 365.25 jours
+                                    </text>
+
+                                    <!-- Source -->
+                                    <text x="160" y="100" text-anchor="middle" font-size="8" fill="#4a5568">
+                                        Source: Pensions versées (CNAV/Agirc-Arrco 2025)
+                                    </text>
+                                </svg>
+                            </div>
+
+                            <div class="mt-3 text-sm"
+                                style="color: var(--gray-400); font-size: 0.85rem; line-height: 1.6; text-align: center;">
+                                <p>Le calcul compare votre montant au budget annuel des retraites françaises (<strong
+                                        style="color: var(--gold-400);">420 milliards €</strong> en 2025, incluant
+                                    régimes
+                                    de base et complémentaires).</p>
+                                <p class="mt-1">Le résultat exprime ce que ce montant représente en <span
+                                        style="color: var(--white); font-weight: 500;">temps de versement</span> pour
+                                    l'ensemble des retraités.</p>
+                                <p class="mt-2 text-xs italic">Les montants des projets historiques (ex: Tour Eiffel,
+                                    Apollo) sont convertis en <strong>Valeur ajustée de l'inflation 2025</strong> pour
+                                    tenir compte
+                                    de
+                                    l'inflation.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="app-footer">
+            <div class="footer-links fade-in reveal-8">
+                <a href="legal.html" class="footer-link">Mentions Légales</a>
+                <a href="legal.html#confidentialite" class="footer-link">Confidentialité</a>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Snackbar PWA -->
+    <div id="pwa-snackbar" class="snackbar hidden">
+        <span class="snackbar-text">Installez l'app pour un accès rapide&nbsp;!</span>
+        <button class="snackbar-btn" onclick="promptInstall()">Installer</button>
+        <button class="snackbar-close" onclick="dismissSnackbar()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+            </svg>
+        </button>
+    </div>
+
+    <script>
+        // Marching Ants Animation - Optimized to avoid forced reflow
+        (function () {
+            const svg = document.querySelector('.example-btn-border-svg');
+            const path = document.querySelector('.marching-path');
+            if (!svg || !path) return;
+
+            let pathLength = 0;
+            const speed = 15;
+            let lastTime = performance.now();
+            let animationId;
+            let animationInitialized = false;
+            let offset = 0;
+
+            function updateDimensions() {
+                const wrapper = svg.parentElement;
+                const btn = wrapper.querySelector('.example-btn');
+                if (!btn) return;
+
+                const width = btn.offsetWidth + 4;
+                const height = btn.offsetHeight + 4;
+                const r = 11;
+                const inset = 1.5;
+
+                svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+                const d = `M ${width / 2},${inset} 
+                           L ${width - r},${inset} 
+                           Q ${width - inset},${inset} ${width - inset},${r} 
+                           L ${width - inset},${height - r} 
+                           Q ${width - inset},${height - inset} ${width - r},${height - inset} 
+                           L ${r},${height - inset} 
+                           Q ${inset},${height - inset} ${inset},${height - r} 
+                           L ${inset},${r} 
+                           Q ${inset},${inset} ${r},${inset} 
+                           Z`;
+                path.setAttribute('d', d);
+            }
+
+            function initAnimation() {
+                pathLength = path.getTotalLength();
+                const dashCount = 24;
+                const dashLength = pathLength / dashCount;
+                path.style.strokeDasharray = `${dashLength * 0.4} ${dashLength * 0.6}`;
+                animationInitialized = true;
+            }
+
+            function animate(currentTime) {
+                const deltaTime = (currentTime - lastTime) / 1000;
+                lastTime = currentTime;
+                offset -= speed * deltaTime;
+                if (offset <= -pathLength) offset = 0;
+                path.style.strokeDashoffset = offset;
+                animationId = requestAnimationFrame(animate);
+            }
+
+            function startAnimation() {
+                if (!animationInitialized) {
+                    updateDimensions();
+                    initAnimation();
+                }
+                lastTime = performance.now();
+                animationId = requestAnimationFrame(animate);
+            }
+
+            function stopAnimation() {
+                if (animationId) {
+                    cancelAnimationFrame(animationId);
+                    animationId = null;
+                }
+            }
+
+            // Use ResizeObserver for dimension updates (avoids forced reflow on resize)
+            const resizeObserver = new ResizeObserver(() => {
+                if (animationInitialized) {
+                    updateDimensions();
+                    initAnimation();
+                }
+            });
+            resizeObserver.observe(svg.parentElement);
+
+            // Start animation when visible - defer all work to rAF to avoid forced reflow
+            const intersectionObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        requestAnimationFrame(startAnimation);
+                    } else {
+                        stopAnimation();
+                    }
+                });
+            });
+            intersectionObserver.observe(path);
+        })();
+
+        // LCP Optimization: Apply animations after first paint
+        // This ensures elements are rendered immediately for Lighthouse LCP measurement
+        // while still providing visual effects for users
+        (function() {
+            const titleElement = document.querySelector('.header-title');
+            const boatElement = document.querySelector('.header-boat');
+            
+            // Use setTimeout with 0ms to ensure we're after the initial render
+            // This is more reliable than double rAF for LCP optimization
+            setTimeout(() => {
+                // Add title animations: shimmer effect + subtle pulse
+                if (titleElement) {
+                    titleElement.classList.add('title-shimmer', 'title-reveal-optimized');
+                }
+                // Add boat animation
+                if (boatElement) {
+                    boatElement.classList.add('animate');
+                }
+            }, 0);
+        })();
+    </script>
+
+</body>
+
+</html>

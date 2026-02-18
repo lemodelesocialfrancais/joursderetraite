@@ -1,0 +1,128 @@
+# Jours de Retraite
+
+> Une application web progressive (PWA) pour convertir des montants en équivalents temporels de retraites versées en France.
+
+## Description
+
+Cette application permet aux utilisateurs de comprendre l'échelle des montants en les comparant au budget annuel des retraites françaises (420 milliards € en 2025). Elle offre deux modes de calcul :
+
+- **Mode Temporel** : Convertit un montant en durée équivalente de versement de retraites
+- **Mode Financier** : Compare un montant ou un objet au coût des retraites sur une période donnée
+
+## Technologies
+
+- **Frontend** : HTML5, CSS3, JavaScript ES6+ (modules)
+- **PWA** : Service Worker, Web App Manifest, installation native
+- **Design** : Interface dark theme avec animations optimisées pour les performances
+- **Hébergement** : GitHub Pages
+
+## Structure du projet
+
+```
+/
+├── index.html              # Page principale de l'application
+├── legal.html              # Mentions légales et politique de confidentialité
+├── manifest.json           # Manifeste PWA pour l'installation
+├── style.css               # Styles CSS (design system + composants)
+├── sw.js                   # Service Worker pour le fonctionnement hors-ligne
+├── robots.txt              # Configuration pour les robots d'indexation
+├── sitemap.xml             # Plan du site pour le SEO
+├── llms.txt                # Ce fichier - documentation pour LLMs
+│
+├── js/
+│   ├── main.js             # Point d'entrée, orchestration des modules
+│   └── modules/
+│       ├── calculator.js   # Logique de calcul (conversion montants/durées)
+│       ├── examples.js     # Exemples prédéfinis (projets historiques, objets)
+│       ├── formatting.js   # Formatage des nombres et entrées utilisateur
+│       ├── pwa.js          # Gestion PWA (installation, mise à jour)
+│       ├── sharing.js      # Fonctions de partage (réseaux sociaux, natif)
+│       ├── state.js        # Gestion de l'état de l'application
+│       ├── theme.js        # Gestion du thème (dark/light)
+│       └── ui.js           # Interactions UI (modes, dropdowns, reset)
+│
+└── assets/
+    ├── favicon.ico         # Icône du site
+    ├── icon-192x192.png    # Icône PWA 192x192
+    ├── icon-512x512.png    # Icône PWA 512x512
+    ├── icon-maskable-*.png # Icônes adaptatives
+    ├── apple-splash.png    # Écran de démarrage iOS
+    └── bateaucroisiere.webp # Image décorative du header
+```
+
+## Fonctionnalités principales
+
+### Calculateur temporel
+- Saisie d'un montant en euros
+- Conversion en équivalent de jours/heures/minutes de retraites versées
+- Basé sur le budget annuel : 420 milliards € (CNAV + Agirc-Arrco 2025)
+
+### Calculateur financier
+- Comparaison avec des objets prédéfinis (Tour Eiffel, Apollo, etc.)
+- Possibilité de saisir un objet personnalisé
+- Ajustement automatique de l'inflation pour les montants historiques
+
+### Partage
+- Partage natif (Web Share API)
+- Réseaux sociaux : Facebook, X/Twitter, WhatsApp, Telegram, Messenger, Pinterest, LinkedIn
+- Email et SMS
+- Copie dans le presse-papiers
+
+### PWA
+- Installation sur appareil mobile/desktop
+- Fonctionnement hors-ligne (cache-first)
+- Mise à jour automatique du Service Worker
+
+## Méthodologie de calcul
+
+```
+Durée (jours) = (Montant / 420 000 000 000) × 365.25
+```
+
+Le montant total des retraites versées en France en 2025 est estimé à 420 milliards d'euros, incluant :
+- Les pensions de base (CNAV)
+- Les pensions complémentaires (Agirc-Arrco)
+
+## Design System
+
+### Couleurs
+- `--navy-900` : #0a192f (fond principal)
+- `--navy-800` : #112240 (fond secondaire)
+- `--gold-500` : #d4af37 (accent principal)
+- `--gold-400` : #e6c55a (accent clair)
+- `--gray-400` : #8892b0 (texte secondaire)
+
+### Typographie
+- Système : system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto
+- Monospace : ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas
+
+## API et fonctions publiques
+
+Les fonctions principales sont exposées globalement via `window` pour compatibilité avec les attributs `onclick` du HTML :
+
+- `calculate()` : Lance le calcul temporel
+- `calculateComparison()` : Lance le calcul financier
+- `switchMode(mode)` : Change entre modes 'temporal' et 'financial'
+- `resetForm()` : Réinitialise le formulaire
+- `setRandomExample()` : Charge un exemple aléatoire
+- `copyResult(mode)` : Copie le résultat dans le presse-papiers
+- `shareOnSocial(network)` : Partage sur un réseau social
+- `nativeShare(mode)` : Déclenche le partage natif
+
+## Source des données
+
+- Budget des retraites : CNAV/Agirc-Arrco 2025
+- Prix des exemples historiques : Sources publiques, ajustés pour l'inflation
+- Taux d'inflation : INSEE
+
+## Licence
+
+Projet éducatif à but non lucratif. Les données sont fournies à titre indicatif.
+
+## Contact
+
+Pour toute question ou suggestion, consultez la page des mentions légales sur le site.
+
+---
+
+*Ce fichier llms.txt est conçu pour aider les assistants IA à comprendre et travailler avec ce projet.*

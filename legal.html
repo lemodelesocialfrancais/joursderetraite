@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mentions Légales - Jours de Retraite</title>
+
+    <style>
+        :root {
+            --navy-900: #0a192f;
+            --navy-800: #112240;
+            --gold-400: #e6c55a;
+            --white: #e6f1ff;
+            --gray-400: #8892b0;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: auto;
+            min-height: 100%;
+            overflow-x: hidden;
+            overflow-y: auto;
+            background-color: var(--navy-900);
+        }
+
+        body {
+            color: var(--white);
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem 1.5rem;
+            /* Réduction du padding haut et sécurisation bas */
+        }
+
+        h1 {
+            color: var(--gold-400);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        h2 {
+            color: var(--gold-400);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 2.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid rgba(230, 197, 90, 0.2);
+            padding-bottom: 0.5rem;
+        }
+
+        p,
+        ul {
+            color: var(--gray-400);
+            margin-bottom: 1rem;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            color: var(--gold-400);
+            text-decoration: none;
+            margin-bottom: 2rem;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+
+        .back-link:hover {
+            opacity: 0.8;
+        }
+
+        .placeholder {
+            background: rgba(230, 197, 90, 0.1);
+            color: var(--gold-400);
+            padding: 0 4px;
+            border-radius: 2px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <a href="index.html" class="back-link">
+            <svg style="width:20px;height:20px;margin-right:8px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
+                </path>
+            </svg>
+            Retour au site
+        </a>
+
+        <h1>Informations Légales</h1>
+
+        <section>
+            <h2>1. Mentions Légales</h2>
+            <p><strong>Éditeur du site :</strong><br>
+                Conformément aux dispositions de l'article 6-III-2 de la loi n° 2004-575 du 21 juin 2004 pour la
+                confiance dans l'économie numérique (LCEN), l'éditeur de ce site a choisi de conserver son anonymat. Les
+                informations d'identification personnelle ont été communiquées à l'hébergeur.</p>
+
+            <p><strong>Hébergeur :</strong><br>
+                Le site est hébergé par <strong>GitHub Inc.</strong><br>
+                Adresse : 88 Colin P. Kelly Jr. St, San Francisco, CA 94107, USA<br>
+                Site web : <a href="https://pages.github.com" style="color:var(--gold-400)">pages.github.com</a></p>
+        </section>
+
+        <section>
+            <h2>2. Politique de Confidentialité</h2>
+            <p>La protection de votre vie privée est une priorité. Le site "Jours de Retraite" est conçu pour être
+                respectueux de vos données :</p>
+            <ul style="list-style-type: disc; margin-left: 1.5rem;">
+                <li><strong>Aucune collecte de données personnelles :</strong> Nous ne collectons, ne stockons et ne
+                    traitons aucune donnée personnelle vous concernant.</li>
+                <li><strong>Pas de cookies tiers :</strong> Le site n'utilise aucun cookie de traçage ou de publicité.
+                </li>
+                <li><strong>Exécution locale :</strong> Les calculs sont effectués directement dans votre navigateur.
+                    Aucun montant saisi ne quitte votre appareil.</li>
+                <li><strong>PWA :</strong> Si vous installez le site en tant qu'application (PWA), les fichiers sont
+                    stockés localement sur votre appareil via un Service Worker pour permettre l'utilisation hors-ligne.
+                </li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>3. Propriété Intellectuelle</h2>
+            <p>L'ensemble du contenu (textes, graphismes, logos) est la propriété exclusive de l'éditeur, sauf mention
+                contraire. Toute reproduction est interdite sans autorisation préalable.</p>
+        </section>
+
+        <section>
+            <h2>4. Responsabilité</h2>
+            <p>Les calculs fournis par ce site le sont à titre indicatif et pédagogique. Bien que nous nous efforcions
+                d'utiliser des sources officielles (Budget des retraites 2025), nous ne pouvons garantir l'exactitude
+                absolue des résultats pour des situations individuelles complexes.</p>
+        </section>
+
+        <footer
+            style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--gray-400); padding-bottom: 1rem;">
+            Dernière mise à jour : Février 2026
+        </footer>
+    </div>
+</body>
+
+</html>
