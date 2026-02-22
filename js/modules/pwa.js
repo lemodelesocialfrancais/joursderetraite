@@ -238,9 +238,12 @@ export function showPWASnackbar() {
 export function initPWA() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
-            navigator.serviceWorker.register('sw.js')
-                .then(function () {
-
+            navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
+                .then(function (registration) {
+                    // Force une vérification d'update dès le chargement.
+                    registration.update().catch(() => {
+                        // Ignore update errors
+                    });
 
                     window.addEventListener('beforeinstallprompt', (event) => {
 

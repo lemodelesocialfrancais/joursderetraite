@@ -4,13 +4,122 @@
  */
 
 import { state } from './state.js';
+import { showError, showWarning, showSuccess } from './toast.js';
+
+// === REGEX PARTAGÉES (pré-compilées pour performance) ===
+const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+
+/**
+ * Détecte si l'utilisateur est sur mobile
+ * @returns {boolean}
+ */
+function isMobile() {
+    return MOBILE_REGEX.test(navigator.userAgent);
+}
 
 /**
  * Détecte si l'utilisateur est sur un ordinateur
  * @returns {boolean}
  */
 export function isDesktop() {
-    return !(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
+    return !isMobile();
+}
+
+/**
+ * Initialise les boutons de partage en clonant le template
+ * et en configurant l'event delegation
+ */
+export function initShareButtons() {
+    const template = document.getElementById('share-buttons-template');
+    if (!template) {
+        console.error('Template share-buttons-template introuvable');
+        return;
+    }
+
+    const temporalShareSection = document.querySelector('#result-section-temporal .share-section');
+    const financialShareSection = document.querySelector('#result-section-financial .share-section');
+
+    if (temporalShareSection) {
+        const temporalButtons = template.content.cloneNode(true);
+        temporalShareSection.querySelector('.share-buttons').appendChild(temporalButtons);
+    }
+
+    if (financialShareSection) {
+        const financialButtons = template.content.cloneNode(true);
+        financialShareSection.querySelector('.share-buttons').appendChild(financialButtons);
+    }
+
+    document.addEventListener('click', handleShareClick);
+}
+
+/**
+ * Gestionnaire d'événements pour les boutons de partage et copie
+ * @param {Event} e - L'événement de clic
+ */
+function handleShareClick(e) {
+    const btn = e.target.closest('[data-platform], [data-action]');
+    if (!btn) return;
+
+    const platform = btn.dataset.platform;
+    const action = btn.dataset.action;
+
+    if (action === 'copy') {
+        copyResult(state.currentActiveMode);
+    } else if (action === 'native-share') {
+        nativeShare(state.currentActiveMode);
+    } else if (action === 'email') {
+        shareVia('email');
+    } else if (action === 'sms') {
+        shareVia('sms');
+    } else if (platform) {
+        shareOnSocial(platform);
+    }
+}
+
+/**
+ * Extrait le résultat depuis le DOM (fallback si l'état global est vide)
+ * @param {string} mode - 'temporal' ou 'financial'
+ * @returns {string|null} Le texte du résultat ou null
+ */
+function extractResultFromDOM(mode) {
+    if (mode === 'temporal') {
+        const temporalGrid = document.querySelector('.result-grid-temporal');
+        if (temporalGrid) {
+            const boxes = temporalGrid.querySelectorAll('.result-box');
+            const parts = [];
+            boxes.forEach(box => {
+                const val = box.querySelector('.value span')?.textContent || '';
+                const label = box.querySelector('.label')?.textContent || '';
+                parts.push(`${val} ${label}`);
+            });
+            return parts.join(' ');
+        }
+        return document.getElementById('result-text-temporal')?.textContent || null;
+    } else {
+        const comparisonEl = document.getElementById('comparison-result-text-financial');
+        const comparisonText = comparisonEl?.textContent || '';
+        return comparisonText.trim() || document.getElementById('result-text-financial')?.textContent || null;
+    }
+}
+
+/**
+ * Récupère le texte du résultat (commun à copyResult et getShareMessage)
+ * @param {string} mode - 'temporal' ou 'financial'
+ * @returns {string|null} Le texte du résultat ou null si vide
+ */
+function getResultText(mode) {
+    // Priorité : état global
+    let resultText = mode === 'temporal' 
+        ? state.storedTemporalResult 
+        : state.storedFinancialResult;
+
+    // Fallback : DOM
+    if (!resultText?.trim()) {
+        console.warn("Résultat stocké vide, tentative de récupération depuis le DOM...");
+        resultText = extractResultFromDOM(mode);
+    }
+
+    return resultText?.trim() || null;
 }
 
 /**
@@ -18,51 +127,11 @@ export function isDesktop() {
  * @param {string} mode - 'temporal' ou 'financial'
  */
 export function copyResult(mode = 'temporal') {
-    let resultText;
-    let copyBtn;
-
-    // Utiliser les résultats stockés dans l'état global pour éviter de copier la structure HTML
-    if (mode === 'temporal') {
-        resultText = state.storedTemporalResult;
-        copyBtn = document.querySelector('#result-section-temporal .copy-btn');
-    } else {
-        resultText = state.storedFinancialResult;
-        copyBtn = document.querySelector('#result-section-financial .copy-btn');
-    }
-
-    // Fallback si l'état est vide (ne devrait pas arriver si un calcul a été fait)
-    if (!resultText || resultText.trim() === "") {
-        console.warn("Résultat stocké vide, tentative de récupération depuis le DOM...");
-        if (mode === 'temporal') {
-            // Tentative de reconstruction propre pour le mode temporel
-            const temporalGrid = document.querySelector('.result-grid-temporal');
-            if (temporalGrid) {
-                const boxes = temporalGrid.querySelectorAll('.result-box');
-                const parts = [];
-                boxes.forEach(box => {
-                    const val = box.querySelector('.value span').textContent;
-                    const label = box.querySelector('.label').textContent;
-                    parts.push(`${val} ${label}`);
-                });
-                resultText = parts.join(' ');
-            } else {
-                resultText = document.getElementById('result-text-temporal').textContent;
-            }
-        } else {
-            const comparisonElement = document.getElementById('comparison-result-text-financial');
-            const comparisonText = comparisonElement ? comparisonElement.textContent : "";
-            resultText = comparisonText.trim() !== "" ? comparisonText : document.getElementById('result-text-financial').textContent;
-        }
-    }
-
-    if (!resultText || resultText.trim() === "") {
-        alert("Aucun résultat à copier. Veuillez d'abord effectuer un calcul.");
-        return;
-    }
+    const resultText = getResultText(mode);
+    const copyBtn = document.querySelector(`#result-section-${mode} .copy-btn`);
 
     if (!copyBtn) {
         console.error("Bouton de copie introuvable");
-        // On continue quand même pour copier le texte
     }
 
     navigator.clipboard.writeText(resultText).then(function () {
@@ -75,7 +144,7 @@ export function copyResult(mode = 'temporal') {
         }
     }).catch(function (err) {
         console.error('Erreur lors de la copie: ', err);
-        alert('Erreur lors de la copie. Vérifiez les permissions de votre navigateur.');
+        showError("Erreur lors de la copie. Vérifiez les permissions de votre navigateur.");
     });
 }
 
@@ -85,38 +154,9 @@ export function copyResult(mode = 'temporal') {
  * @returns {string} Le message formaté
  */
 function getShareMessage(mode) {
-    let resultText;
+    const resultText = getResultText(mode);
 
-    if (mode === 'temporal') {
-        resultText = state.storedTemporalResult;
-    } else {
-        resultText = state.storedFinancialResult;
-    }
-
-    // Fallback DOM si l'état est vide
-    if (!resultText || resultText.trim() === "") {
-        if (mode === 'temporal') {
-            const temporalGrid = document.querySelector('.result-grid-temporal');
-            if (temporalGrid) {
-                const boxes = temporalGrid.querySelectorAll('.result-box');
-                const parts = [];
-                boxes.forEach(box => {
-                    const val = box.querySelector('.value span').textContent;
-                    const label = box.querySelector('.label').textContent;
-                    parts.push(`${val} ${label}`);
-                });
-                resultText = parts.join(' ');
-            } else {
-                resultText = document.getElementById('result-text-temporal').textContent;
-            }
-        } else {
-            const comparisonElement = document.getElementById('comparison-result-text-financial');
-            const comparisonText = comparisonElement ? comparisonElement.textContent : "";
-            resultText = comparisonText.trim() !== "" ? comparisonText : document.getElementById('result-text-financial').textContent;
-        }
-    }
-
-    if (!resultText || resultText.trim() === "") {
+    if (!resultText) {
         return null;
     }
 
@@ -157,11 +197,6 @@ function getShareMessage(mode) {
  */
 export function shareOnSocial(platform) {
     const message = getShareMessage(state.currentActiveMode);
-    if (!message) {
-        alert("Veuillez d'abord effectuer un calcul.");
-        return;
-    }
-
     const currentUrl = window.location.href;
     // Le message contient déjà l'URL, pas besoin de l'ajouter à nouveau
 
@@ -169,6 +204,7 @@ export function shareOnSocial(platform) {
     const directPlatforms = {
         'facebook': `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(message)}`,
         'twitter': `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`,
+        'bluesky': `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`,
         'linkedin': `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
         'whatsapp': `https://wa.me/?text=${encodeURIComponent(message)}`,
         'telegram': `https://t.me/share?text=${encodeURIComponent(message)}`,
@@ -212,10 +248,10 @@ export function shareOnSocial(platform) {
  */
 function copyToClipboardFallback(text) {
     navigator.clipboard.writeText(text).then(() => {
-        alert("Propulsé par Jours de Retraite !\n\nLe texte de partage a été copié dans votre presse-papiers. Vous pouvez maintenant le coller dans votre application.");
+        showSuccess("Le texte de partage a été copié ! Vous pouvez le coller dans votre application.");
     }).catch(err => {
         console.error("Erreur copie clipboard:", err);
-        alert("Impossible de copier automatiquement. Veuillez copier le résultat manuellement.");
+        showError("Impossible de copier automatiquement. Veuillez copier le résultat manuellement.");
     });
 }
 
@@ -227,7 +263,7 @@ export function shareVia(method) {
     const message = getShareMessage(state.currentActiveMode);
 
     if (!message) {
-        alert("Veuillez d'abord effectuer un calcul.");
+        showWarning("Veuillez d'abord effectuer un calcul.");
         return;
     }
 
@@ -245,14 +281,11 @@ export function shareVia(method) {
  * Détecte la capacité SMS et cache le bouton si non disponible
  */
 export function checkSMSCapability() {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-
-    if (!isMobile) {
-        const smsButtons = document.querySelectorAll('button[onclick*="shareVia(\'sms\')"]');
+    if (!isMobile()) {
+        const smsButtons = document.querySelectorAll('button[data-action="sms"]');
         smsButtons.forEach(btn => {
             btn.style.display = 'none';
         });
-
     }
 }
 
@@ -265,9 +298,8 @@ function detectPlatform() {
     const isWindows = /Windows NT/.test(userAgent);
     const isMac = /Mac OS X/.test(userAgent) && !/iPhone|iPad/.test(userAgent);
     const isLinux = /Linux/.test(userAgent) && !/Android/.test(userAgent);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
     
-    return { isWindows, isMac, isLinux, isMobile };
+    return { isWindows, isMac, isLinux, isMobile: isMobile() };
 }
 
 /**
@@ -278,7 +310,7 @@ export function nativeShare(mode = 'temporal') {
     const message = getShareMessage(mode);
 
     if (!message) {
-        alert("Aucun résultat à partager. Veuillez d'abord effectuer un calcul.");
+        showWarning("Aucun résultat à partager. Veuillez d'abord effectuer un calcul.");
         return;
     }
 
@@ -464,7 +496,7 @@ function showShareHelperPopup(text) {
             }, 5000);
         }).catch(err => {
             console.error('Erreur copie:', err);
-            alert('Erreur lors de la copie. Veuillez sélectionner et copier manuellement.');
+            showError("Erreur lors de la copie. Veuillez sélectionner et copier manuellement.");
         });
     });
 

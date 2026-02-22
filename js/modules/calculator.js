@@ -3,9 +3,68 @@
  * Fonctions de calcul pour l'équivalent retraites
  */
 
-import { extractNumber, formatCurrency, getPeriodText } from './formatting.js';
+import { extractNumber, formatCurrency } from './formatting.js';
 import { state } from './state.js';
 import { getExampleById } from './examples.js';
+import { DOM } from './dom-cache.js';
+import { showError } from './toast.js';
+
+// === CONSTANTES DE CALCUL (calculées une seule fois au chargement du module) ===
+const TOTAL_RETRAITES = 420e9;
+const SECONDS_IN_YEAR = 365.25 * 24 * 60 * 60;
+const SECONDS_IN_DAY = 24 * 60 * 60;
+const SECONDS_IN_HOUR = 60 * 60;
+const SECONDS_IN_MINUTE = 60;
+const SECONDS_IN_MONTH = (365.25 / 12) * SECONDS_IN_DAY;
+const CALCULATION_COUNT_PERSIST_DELAY_MS = 400;
+
+let __persistCalculationCountTimer = null;
+
+function persistCalculationCount() {
+    if (__persistCalculationCountTimer) {
+        clearTimeout(__persistCalculationCountTimer);
+        __persistCalculationCountTimer = null;
+    }
+
+    try {
+        localStorage.setItem('calculationCount', String(state.calculationCount || 0));
+    } catch {
+        // Ignore storage errors
+    }
+}
+
+function scheduleCalculationCountPersist() {
+    if (__persistCalculationCountTimer) {
+        clearTimeout(__persistCalculationCountTimer);
+    }
+
+    __persistCalculationCountTimer = setTimeout(() => {
+        __persistCalculationCountTimer = null;
+        persistCalculationCount();
+    }, CALCULATION_COUNT_PERSIST_DELAY_MS);
+}
+
+window.addEventListener('pagehide', persistCalculationCount);
+document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') {
+        persistCalculationCount();
+    }
+});
+
+/**
+ * Échappe les caractères HTML pour prévenir les attaques XSS
+ * @param {*} value - La valeur à échapper
+ * @returns {string} La valeur échappée
+ */
+function escapeHTML(value) {
+    return String(value).replace(/[&<>"']/g, (ch) => ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+    }[ch]));
+}
 
 /**
  * Déclenche l'animation slideUp sur les éléments
@@ -15,10 +74,17 @@ export function triggerAnimation(element) {
     if (!element) return;
 
     const digits = element.querySelectorAll('.counter-digit span');
-    digits.forEach((digit, index) => {
+    
+    // Frame 1 : réinitialiser toutes les animations
+    digits.forEach(digit => {
         digit.style.animation = 'none';
-        digit.offsetHeight; // Force reflow
-        digit.style.animation = `slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.1}s backwards`;
+    });
+    
+    // Frame 2 : réactiver les animations (laisse le navigateur gérer le timing)
+    requestAnimationFrame(() => {
+        digits.forEach((digit, index) => {
+            digit.style.animation = `slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.1}s backwards`;
+        });
     });
 }
 
@@ -30,19 +96,18 @@ export function calculateLogic() {
     state.isCalculating = true;
 
     // Vérifier que nous sommes bien en mode temporel
-    const temporalInputs = document.getElementById('temporal-inputs');
-    if (temporalInputs.classList.contains('hidden')) {
+    if (DOM.temporalInputs.classList.contains('hidden')) {
         console.error("Erreur: calculateLogic() appelé alors que nous ne sommes pas en mode temporel");
         state.isCalculating = false;
         return;
     }
 
     // Récupérer la valeur brute du champ
-    const amountInput = document.getElementById('amount');
-    const rawValue = amountInput ? amountInput.value : '';
+    const rawValue = DOM.amount ? DOM.amount.value : '';
 
-    // Si le champ est vide, ne rien faire
+    // Si le champ est vide, afficher une erreur
     if (rawValue.trim() === '') {
+        showError("Veuillez entrer un montant.", "amount");
         state.isCalculating = false;
         return;
     }
@@ -51,48 +116,36 @@ export function calculateLogic() {
     const amount = extractNumber(rawValue);
 
     if (isNaN(amount) || amount < 0) {
+        showError("Veuillez entrer un montant valide.", "amount");
         state.isCalculating = false;
         return;
     }
 
     // Incrémenter le compteur de calculs pour PWA
     state.calculationCount = (state.calculationCount || 0) + 1;
-    localStorage.setItem('calculationCount', state.calculationCount.toString());
-
-    // Montant total des retraites versées en France en 2025
-    const totalRetraites = 420e9; // 420 milliards d'euros
+    scheduleCalculationCountPersist();
 
     // Calcul du ratio
-    const ratio = amount / totalRetraites;
-
-    // Nombre de secondes dans une année
-    const secondsInYear = 365.25 * 24 * 60 * 60;
+    const ratio = amount / TOTAL_RETRAITES;
 
     // Calcul des secondes équivalentes
-    const equivalentSeconds = ratio * secondsInYear;
-
-    // Conversion en années, mois, jours, heures, minutes et secondes
-    const secondsInDay = 24 * 60 * 60;
-    const secondsInHour = 60 * 60;
-    const secondsInMinute = 60;
+    const equivalentSeconds = ratio * SECONDS_IN_YEAR;
 
     // Calcul des années
-    const years = Math.floor(equivalentSeconds / (365.25 * secondsInDay));
-    let remainingSeconds = equivalentSeconds % (365.25 * secondsInDay);
+    const years = Math.floor(equivalentSeconds / (365.25 * SECONDS_IN_DAY));
+    let remainingSeconds = equivalentSeconds % (365.25 * SECONDS_IN_DAY);
 
     // Calcul des mois
-    const daysInMonth = 365.25 / 12;
-    const secondsInMonth = daysInMonth * secondsInDay;
-    const months = Math.floor(remainingSeconds / secondsInMonth);
-    remainingSeconds = remainingSeconds % secondsInMonth;
+    const months = Math.floor(remainingSeconds / SECONDS_IN_MONTH);
+    remainingSeconds = remainingSeconds % SECONDS_IN_MONTH;
 
     // Calcul des jours, heures, minutes et secondes
-    const days = Math.floor(remainingSeconds / secondsInDay);
-    remainingSeconds = remainingSeconds % secondsInDay;
-    const hours = Math.floor(remainingSeconds / secondsInHour);
-    remainingSeconds = remainingSeconds % secondsInHour;
-    const minutes = Math.floor(remainingSeconds / secondsInMinute);
-    const seconds = Math.floor(remainingSeconds % secondsInMinute);
+    const days = Math.floor(remainingSeconds / SECONDS_IN_DAY);
+    remainingSeconds = remainingSeconds % SECONDS_IN_DAY;
+    const hours = Math.floor(remainingSeconds / SECONDS_IN_HOUR);
+    remainingSeconds = remainingSeconds % SECONDS_IN_HOUR;
+    const minutes = Math.floor(remainingSeconds / SECONDS_IN_MINUTE);
+    const seconds = Math.floor(remainingSeconds % SECONDS_IN_MINUTE);
 
     // Calcul précis des millisecondes
     const totalMilliseconds = Math.round(equivalentSeconds * 1000);
@@ -154,10 +207,9 @@ export function calculateLogic() {
     finalHTML += `</div>`;
 
     // Affichage du résultat
-    const resultElement = document.getElementById('result-text-temporal');
-    if (resultElement) {
-        resultElement.innerHTML = finalHTML;
-        triggerAnimation(resultElement);
+    if (DOM.resultTextTemporal) {
+        DOM.resultTextTemporal.innerHTML = finalHTML;
+        triggerAnimation(DOM.resultTextTemporal);
     }
 
     // Stocker le résultat (format texte pour le partage)
@@ -171,36 +223,31 @@ export function calculateLogic() {
     state.storedTemporalResult = textResult.trim() || fallbackResult;
 
     // Afficher les sections de résultat et de partage
-    const resultSection = document.getElementById('result-section-temporal');
-    const shareSection = document.getElementById('share-section-temporal');
-
-    if (resultSection) {
+    if (DOM.resultSectionTemporal) {
         // Vérifier si c'est le premier affichage
-        const isFirstTime = !resultSection.hasAttribute('data-shown-before');
+        const isFirstTime = !DOM.resultSectionTemporal.hasAttribute('data-shown-before');
 
-        resultSection.classList.remove('hidden');
+        DOM.resultSectionTemporal.classList.remove('hidden');
 
         if (isFirstTime) {
             // Marquer comme déjà affiché
-            resultSection.setAttribute('data-shown-before', 'true');
+            DOM.resultSectionTemporal.setAttribute('data-shown-before', 'true');
 
             // Ajouter la classe d'animation comme au chargement de la page
-            resultSection.classList.add('fade-in-slide-up');
+            DOM.resultSectionTemporal.classList.add('fade-in-slide-up');
         }
     }
 
-    if (shareSection) {
-        shareSection.classList.remove('hidden');
+    if (DOM.shareSectionTemporal) {
+        DOM.shareSectionTemporal.classList.remove('hidden');
     }
 
     // Masquer les sections du mode financier
-    const financialResultSection = document.getElementById('result-section-financial');
-    const financialShareSection = document.getElementById('share-section-financial');
-    if (financialResultSection) {
-        financialResultSection.classList.add('hidden');
+    if (DOM.resultSectionFinancial) {
+        DOM.resultSectionFinancial.classList.add('hidden');
     }
-    if (financialShareSection) {
-        financialShareSection.classList.add('hidden');
+    if (DOM.shareSectionFinancial) {
+        DOM.shareSectionFinancial.classList.add('hidden');
     }
 
     // Déclencher l'événement pour PWA
@@ -216,9 +263,7 @@ export function calculateLogic() {
  */
 export function calculate() {
 
-    const temporalInputs = document.getElementById('temporal-inputs');
-
-    if (temporalInputs.classList.contains('hidden')) {
+    if (DOM.temporalInputs.classList.contains('hidden')) {
 
         return;
     }
@@ -236,14 +281,24 @@ export function calculateComparison() {
         openDropdown.classList.remove('open');
     }
     
-    const objectTypeSelect = document.getElementById('object-type');
-    const selectedValue = objectTypeSelect.value;
+    // Vérifier si l'utilisateur a sélectionné un objet
+    const triggerText = document.querySelector('#object-type-dropdown .trigger-text');
+    if (triggerText && triggerText.textContent.includes('Sélectionnez')) {
+        showError("Veuillez sélectionner un objet dans la liste.");
+        const dropdown = document.getElementById('object-type-dropdown');
+        if (dropdown) {
+            dropdown.classList.add('field-error');
+            setTimeout(() => dropdown.classList.remove('field-error'), 2000);
+        }
+        return;
+    }
+    
+    const selectedValue = DOM.objectTypeSelect.value;
+    const isCustomAmount = selectedValue === 'autre' || selectedValue === '';
     let objectLabel = '';
 
     // Récupérer directement le label depuis examples.js (avec article)
-    if (selectedValue === 'autre' || selectedValue === '') {
-        objectLabel = document.getElementById('object-name').value || 'un objet';
-    } else {
+    if (!isCustomAmount) {
         const example = getExampleById(selectedValue);
         if (example && example.label) {
             // Enlever les parenthèses et leur contenu (ex: "(2025)", "(coût annuel)")
@@ -252,33 +307,33 @@ export function calculateComparison() {
     }
 
     // Récupérer la valeur brute du champ
-    const rawPriceValue = document.getElementById('object-price').value;
+    const rawPriceValue = DOM.objectPriceInput.value;
 
     if (rawPriceValue.trim() === '') {
-        alert("Veuillez entrer un prix pour l'objet.");
+        showError("Veuillez entrer un montant de comparaison.", "object-price");
         return;
     }
 
     const objectPrice = extractNumber(rawPriceValue);
-    const timePeriodValue = document.getElementById('time-period').value;
+    const timePeriodValue = DOM.timePeriodSelect.value;
 
     if (isNaN(objectPrice) || objectPrice <= 0) {
-        alert("Veuillez entrer un prix valide pour l'objet.");
+        showError("Veuillez entrer un montant de comparaison valide.", "object-price");
         return;
     }
 
     let periodMultiplier;
     if (timePeriodValue === 'custom') {
-        const rawPeriodValue = document.getElementById('custom-period').value;
+        const rawPeriodValue = DOM.customPeriod.value;
 
         if (rawPeriodValue.trim() === '') {
-            alert("Veuillez entrer une durée personnalisée.");
+            showError("Veuillez entrer une durée personnalisée.", "custom-period");
             return;
         }
 
         periodMultiplier = extractNumber(rawPeriodValue);
         if (isNaN(periodMultiplier) || periodMultiplier <= 0) {
-            alert("Veuillez entrer une durée personnalisée valide.");
+            showError("Veuillez entrer une durée personnalisée valide.", "custom-period");
             return;
         }
     } else {
@@ -287,16 +342,16 @@ export function calculateComparison() {
 
     // Incrémenter le compteur de calculs pour PWA
     state.calculationCount = (state.calculationCount || 0) + 1;
-    localStorage.setItem('calculationCount', state.calculationCount.toString());
+    scheduleCalculationCountPersist();
 
     // Calcul du montant équivalent
-    const annualRetirementAmount = 420e9;
-    const periodAmount = annualRetirementAmount * periodMultiplier;
+    const periodAmount = TOTAL_RETRAITES * periodMultiplier;
     const numberOfObjects = periodAmount / objectPrice;
 
     // Formatage du résultat
     let formattedNumber;
     let rawNumberFormatted;
+    let isPercentage = false;
 
     if (numberOfObjects >= 1e9) {
         const valueInBillions = numberOfObjects / 1e9;
@@ -325,79 +380,118 @@ export function calculateComparison() {
             formattedNumber = Math.floor(numberOfObjects).toLocaleString();
         }
     } else {
-        formattedNumber = numberOfObjects.toFixed(1).replace('.', ',');
-        if (formattedNumber.endsWith(',0')) {
-            formattedNumber = formattedNumber.slice(0, -2);
+        const percentage = numberOfObjects * 100;
+        isPercentage = true;
+        
+        if (percentage >= 10) {
+            formattedNumber = percentage.toFixed(1).replace('.', ',');
+            if (formattedNumber.endsWith(',0')) {
+                formattedNumber = formattedNumber.slice(0, -2);
+            }
+            formattedNumber += '%';
+        } else if (percentage >= 1) {
+            formattedNumber = percentage.toFixed(1).replace('.', ',') + '%';
+        } else if (percentage >= 0.1) {
+            formattedNumber = percentage.toFixed(2).replace('.', ',') + '%';
+        } else if (percentage >= 0.001) {
+            formattedNumber = percentage.toFixed(3).replace('.', ',') + '%';
+        } else {
+            formattedNumber = '< 0,001%';
         }
     }
-
-    const escapeHTML = (value) => String(value).replace(/[&<>"']/g, (ch) => ({
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;'
-    }[ch]));
 
     // Le label est utilisé tel quel (pas de pluriel en français pour "X fois le/la/un/une...")
     const safeObjectLabel = escapeHTML(objectLabel);
 
     // Affichage du résultat principal
-    const mainResultText = document.getElementById('result-text-financial');
-    const periodText = getPeriodText(periodMultiplier);
+    const customAmountText = formatCurrency(objectPrice);
+    const safeCustomAmountText = escapeHTML(customAmountText);
 
-    // Déterminer si on doit ajouter "de" avant "fois" (pour millions/milliards)
-    const foisText = (formattedNumber.includes('million') || formattedNumber.includes('milliard')) ? "de fois" : "fois";
+    // Construction du HTML selon le mode (pourcentage ou nombre)
+    let resultHTML;
+    let simpleText;
+    
+    if (isPercentage) {
+        if (isCustomAmount) {
+            resultHTML = `
+                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-grid-financial">
+                    <div class="result-box highlight">
+                        <span class="value counter-digit"><span>${formattedNumber}</span></span>
+                    </div>
+                    <span class="result-fois-text">de ${safeCustomAmountText}</span>
+                </div>
+            `;
+            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} de ${customAmountText}.`;
+        } else {
+            resultHTML = `
+                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-grid-financial">
+                    <div class="result-box highlight">
+                        <span class="value counter-digit"><span>${formattedNumber}</span></span>
+                    </div>
+                    <span class="result-fois-text">de ${safeObjectLabel}</span>
+                </div>
+            `;
+            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} de ${objectLabel}.`;
+        }
+    } else {
+        const foisText = (formattedNumber.includes('million') || formattedNumber.includes('milliard')) ? "de fois" : "fois";
+        if (isCustomAmount) {
+            resultHTML = `
+                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-grid-financial">
+                    <div class="result-box highlight">
+                        <span class="value counter-digit"><span>${formattedNumber}</span></span>
+                    </div>
+                    <span class="result-fois-text">${foisText} ${safeCustomAmountText}</span>
+                </div>
+            `;
+            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} ${foisText} ${customAmountText}.`;
+        } else {
+            resultHTML = `
+                <div class="result-interpretation-header">Les prestations retraites de 2025 pourraient financer&nbsp;:</div>
+                <div class="result-grid-financial">
+                    <div class="result-box highlight">
+                        <span class="value counter-digit"><span>${formattedNumber}</span></span>
+                    </div>
+                    <span class="result-fois-text">${foisText} ${safeObjectLabel}</span>
+                </div>
+            `;
+            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, on pourrait avoir ${formattedNumber} ${foisText} ${objectLabel}.`;
+        }
+    }
 
-    // Construction du HTML
-    const resultHTML = `
-        <div class="result-interpretation-header">Les prestations retraites de 2025 (<strong>${periodText}</strong>) pourraient financer&nbsp;:</div>
-        <div class="result-grid-financial">
-            <div class="result-box highlight">
-                <span class="value counter-digit"><span>${formattedNumber}</span></span>
-            </div>
-            <span class="result-fois-text">${foisText} ${safeObjectLabel}</span>
-        </div>
-    `;
-
-    mainResultText.innerHTML = resultHTML;
-    triggerAnimation(mainResultText);
-
-    // Texte simple pour le partage
-    const priceText = numberOfObjects > 1 ? `à ${formatCurrency(objectPrice)} chacun` : `à ${formatCurrency(objectPrice)}`;
-    const simpleText = `Avec ${periodText} de retraites (${formatCurrency(periodAmount)}), on peut avoir ${formattedNumber} ${foisText} ${objectLabel}.`;
+    DOM.resultTextFinancial.innerHTML = resultHTML;
+    triggerAnimation(DOM.resultTextFinancial);
 
     // Stocker les résultats
     state.storedFinancialResult = simpleText;
     // Pour compatibilité avec sharing.js
-    const hiddenComparisonDiv = document.getElementById('comparison-result-text-financial');
-    if (hiddenComparisonDiv) hiddenComparisonDiv.textContent = simpleText;
+    if (DOM.comparisonResultTextFinancial) DOM.comparisonResultTextFinancial.textContent = simpleText;
 
     // Afficher les sections du mode financier
-    const financialResultSection = document.getElementById('result-section-financial');
-    const financialShareSection = document.getElementById('share-section-financial');
-
-    if (financialResultSection) {
+    if (DOM.resultSectionFinancial) {
         // Vérifier si c'est le premier affichage
-        const isFirstTime = !financialResultSection.hasAttribute('data-shown-before');
+        const isFirstTime = !DOM.resultSectionFinancial.hasAttribute('data-shown-before');
 
-        financialResultSection.classList.remove('hidden');
+        DOM.resultSectionFinancial.classList.remove('hidden');
 
         if (isFirstTime) {
             // Marquer comme déjà affiché
-            financialResultSection.setAttribute('data-shown-before', 'true');
+            DOM.resultSectionFinancial.setAttribute('data-shown-before', 'true');
 
             // Ajouter la classe d'animation comme au chargement de la page
-            financialResultSection.classList.add('fade-in-slide-up');
+            DOM.resultSectionFinancial.classList.add('fade-in-slide-up');
         }
     }
-    if (financialShareSection) {
-        financialShareSection.classList.remove('hidden');
+    if (DOM.shareSectionFinancial) {
+        DOM.shareSectionFinancial.classList.remove('hidden');
     }
 
     // Masquer les sections du mode temporel
-    document.getElementById('result-section-temporal').classList.add('hidden');
-    document.getElementById('share-section-temporal').classList.add('hidden');
+    DOM.resultSectionTemporal.classList.add('hidden');
+    DOM.shareSectionTemporal.classList.add('hidden');
 
     // Déclencher l'événement pour PWA
     window.dispatchEvent(new CustomEvent('calculationComplete', {

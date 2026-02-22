@@ -3,6 +3,14 @@
  * Fonctions de formatage des nombres et des montants
  */
 
+// === FORMATEURS RÉUTILISÉS (créés une seule fois au chargement du module) ===
+const CURRENCY_FORMATTER = new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
+});
+
 /**
  * Formate les nombres avec des espaces insécables pour séparer les milliers
  * @param {HTMLInputElement} input - Le champ de saisie à formater
@@ -142,12 +150,7 @@ export function formatNumberOnBlur(input) {
  * @returns {string} Le montant formaté
  */
 export function formatCurrency(amount) {
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'EUR',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0
-    }).format(amount);
+    return CURRENCY_FORMATTER.format(amount);
 }
 
 /**

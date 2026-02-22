@@ -86,11 +86,10 @@ export const examples = [
     { id: "frites_double", value: 2, label: "une double portion de frites à la cantine" },
 
     // --- Publics ---
-    { id: "place_prison", value: 270000, label: "la construction d'une place de prison" },
-
-    // --- Santé ---
-    { id: "cures_thermales", value: 250000000, label: "le remboursement des cures thermales par la Sécurité sociale (2025)" }
+    { id: "place_prison", value: 270000, label: "la construction d'une place de prison" }
 ];
+
+const examplesMap = new Map(examples.map(ex => [ex.id, ex]));
 
 let lastIndex = -1;
 
@@ -138,5 +137,5 @@ export function getFinancialExamples() {
  * @returns {Object|undefined} L'exemple trouvé ou undefined
  */
 export function getExampleById(id) {
-    return examples.find(ex => ex.id === id);
+    return examplesMap.get(id);
 }
