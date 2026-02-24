@@ -154,28 +154,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     })();
 
-    // Effet premium de première visite
-    try {
-        const hasSeen = localStorage.getItem('sparkleSeen') === 'true';
-        if (!hasSeen) {
-            setTimeout(() => {
-                document.body.classList.add('sparkle-pass');
-                const primaryBtn = document.querySelector('.btn-primary');
-                if (primaryBtn) {
-                    primaryBtn.classList.add('one-shot-shimmer');
-                }
-                localStorage.setItem('sparkleSeen', 'true');
-
-                setTimeout(() => {
-                    document.body.classList.remove('sparkle-pass');
-                    if (primaryBtn) primaryBtn.classList.remove('one-shot-shimmer');
-                }, 1600);
-            }, 300);
-        }
-    } catch {
-        // Ignore storage errors
-    }
-
     // Activer le mode temporel par défaut (critique pour l'affichage initial)
     switchMode('temporal');
 
