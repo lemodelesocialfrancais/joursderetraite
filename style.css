@@ -6,7 +6,7 @@
     1. VARIABLES CSS
     ============================================ */
 :root {
-    color-scheme: dark;
+    color-scheme: light;
     color-adjust: exact;
     forced-color-adjust: none;
     /* Couleurs principales - Palette Navy & Gold */
@@ -175,47 +175,6 @@ body {
     position: relative;
 }
 
-@keyframes sparklePass {
-    0% {
-        opacity: 0;
-        transform: translateX(-120%) skewX(-15deg);
-    }
-
-    20% {
-        opacity: 0.4;
-    }
-
-    80% {
-        opacity: 0.4;
-    }
-
-    100% {
-        opacity: 0;
-        transform: translateX(120%) skewX(-15deg);
-    }
-}
-
-.sparkle-pass .app-container::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg,
-            transparent 0%,
-            rgba(212, 175, 55, 0.05) 30%,
-            rgba(255, 255, 255, 0.15) 50%,
-            rgba(212, 175, 55, 0.05) 70%,
-            transparent 100%);
-    pointer-events: none;
-    mix-blend-mode: color-dodge;
-    opacity: 0;
-    z-index: 2;
-    transform: translateX(-100%) skewX(-15deg);
-    animation: sparklePass 1.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-
 /* Title reveal animation moved to index.html for performance */
 
 
@@ -376,9 +335,14 @@ body {
 }
 
 .result-box:hover {
-    transform: translateY(-2px);
     border-color: rgba(212, 175, 55, 0.5);
     background: rgba(10, 25, 47, 0.6);
+}
+
+@media (hover: hover) {
+    .result-box:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .result-box .value {
@@ -517,8 +481,13 @@ body {
 
 .btn-primary:hover {
     background: var(--gold-500) !important;
-    transform: translateY(-2px);
     box-shadow: 0 6px 25px rgba(212, 175, 55, 0.4);
+}
+
+@media (hover: hover) {
+    .btn-primary:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .btn-primary:active {
@@ -536,7 +505,12 @@ body {
     color: var(--white);
     border-color: rgba(212, 175, 55, 0.3);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .btn-group {
@@ -637,7 +611,12 @@ body {
 
 .mode-toggle-btn:hover:not(.active) {
     color: var(--white);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .mode-toggle-btn:hover:not(.active) {
+        transform: translateY(-2px);
+    }
 }
 
 /* ============================================
@@ -655,10 +634,15 @@ body {
 }
 
 .accordion:hover {
-    transform: translateY(-2px);
     border-color: rgba(212, 175, 55, 0.3);
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
     background: linear-gradient(145deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
+}
+
+@media (hover: hover) {
+    .accordion:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .accordion-header {
@@ -784,8 +768,13 @@ body {
 }
 
 .snackbar-btn:hover {
-    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3);
+}
+
+@media (hover: hover) {
+    .snackbar-btn:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .snackbar-close {
@@ -1006,7 +995,12 @@ body {
 
 .fallback-close:hover {
     background: rgba(255, 107, 107, 0.3);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .fallback-close:hover {
+        transform: translateY(-2px);
+    }
 }
 
 /* Low performance devices - disable animations */
@@ -1038,7 +1032,10 @@ body {
     ============================================ */
 .example-btn { background-color: rgba(212, 175, 55, 0.05); border: none; color: #d4af37; padding: 0 0.6rem; height: 32px; font-size: 0.7rem; font-weight: 700; border-radius: 11px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0; z-index: 10; }
 .example-btn-wrapper { position: relative; display: inline-flex; transition: all var(--transition-base); }
-.example-btn-wrapper:hover { transform: translateY(-2px); }
+
+@media (hover: hover) {
+    .example-btn-wrapper:hover { transform: translateY(-2px); }
+}
 .example-btn-border-svg { position: absolute; top: -2px; left: -2px; pointer-events: none; z-index: 1; overflow: visible; }
 .example-btn-border-svg path { fill: none; stroke: #d4af37; stroke-width: 2.5; stroke-linecap: round; }
 .example-btn:hover { background-color: rgba(212, 175, 55, 0.15) !important; color: #f0d78c !important; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
@@ -1287,8 +1284,8 @@ select.input-field option {
     ============================================ */
 .copy-btn {
     position: absolute;
-    top: 0.4rem;
-    right: 0.5rem;
+    top: 0.35rem;
+    right: 0.45rem;
     background: rgba(212, 175, 55, 0.15);
     border: 1px solid rgba(212, 175, 55, 0.3);
     color: var(--gold-400);
@@ -1298,9 +1295,9 @@ select.input-field option {
     cursor: pointer;
     transition: all var(--transition-base);
     z-index: 1;
-    padding: 0.4rem 0.5rem;
-    min-width: 32px;
-    min-height: 28px;
+    padding: 0.35rem 0.45rem;
+    min-width: 31px;
+    min-height: 27px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1309,7 +1306,12 @@ select.input-field option {
 .copy-btn:hover {
     background: rgba(212, 175, 55, 0.25);
     border-color: rgba(212, 175, 55, 0.5);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .copy-btn:hover {
+        transform: translateY(-2px);
+    }
 }
 
 
@@ -1353,8 +1355,13 @@ select.input-field option {
 .share-btn.native:hover {
     background: var(--gradient-gold);
     color: var(--navy-900);
-    transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+@media (hover: hover) {
+    .share-btn.native:hover {
+        transform: translateY(-2px);
+    }
 }
 
 .current-example {
@@ -1438,7 +1445,12 @@ select.input-field option {
     border-color: var(--gold-500);
     color: var(--gold-400);
     background: rgba(212, 175, 55, 0.1);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .share-btn:hover {
+        transform: translateY(-2px);
+    }
 }
 
 /* All social buttons now use the same gold hover effect from the base .share-btn:hover */
@@ -1816,7 +1828,12 @@ select.input-field option {
 .footer-link:hover {
     color: var(--gold-400);
     text-shadow: 0 4px 12px rgba(212, 175, 55, 0.6), 0 2px 4px rgba(0, 0, 0, 0.8);
-    transform: translateY(-2px);
+}
+
+@media (hover: hover) {
+    .footer-link:hover {
+        transform: translateY(-2px);
+    }
 }
 
 /* Critical start-up animations moved to index.html */

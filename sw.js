@@ -1,7 +1,7 @@
 // Service worker : réseau prioritaire (toujours la dernière version en ligne)
 // + fallback cache (dernière version chargée en ligne) hors ligne.
 
-const CACHE_NAME = 'joursderetraite-runtime-v88';
+const CACHE_NAME = 'joursderetraite-runtime-v89';
 const OFFLINE_FALLBACK_DOCUMENT = 'index.html';
 
 function isSameOriginGetRequest(request) {
