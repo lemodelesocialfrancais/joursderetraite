@@ -414,7 +414,7 @@ export function calculateComparison() {
     if (isPercentage) {
         if (isCustomAmount) {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -422,10 +422,10 @@ export function calculateComparison() {
                     <span class="result-fois-text">de ${safeCustomAmountText}</span>
                 </div>
             `;
-            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} de ${customAmountText}.`;
+            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} de ${customAmountText}.`;
         } else {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -433,13 +433,13 @@ export function calculateComparison() {
                     <span class="result-fois-text">de ${safeObjectLabel}</span>
                 </div>
             `;
-            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} de ${objectLabel}.`;
+            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} de ${objectLabel}.`;
         }
     } else {
         const foisText = (formattedNumber.includes('million') || formattedNumber.includes('milliard')) ? "de fois" : "fois";
         if (isCustomAmount) {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -447,10 +447,10 @@ export function calculateComparison() {
                     <span class="result-fois-text">${foisText} ${safeCustomAmountText}</span>
                 </div>
             `;
-            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, cela représente ${formattedNumber} ${foisText} ${customAmountText}.`;
+            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} ${foisText} ${customAmountText}.`;
         } else {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites de 2025 pourraient financer&nbsp;:</div>
+                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -458,7 +458,7 @@ export function calculateComparison() {
                     <span class="result-fois-text">${foisText} ${safeObjectLabel}</span>
                 </div>
             `;
-            simpleText = `Avec ${formatCurrency(periodAmount)} de prestations retraites, on pourrait avoir ${formattedNumber} ${foisText} ${objectLabel}.`;
+            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} ${foisText} ${objectLabel}.`;
         }
     }
 

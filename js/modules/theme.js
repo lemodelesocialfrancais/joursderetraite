@@ -22,17 +22,6 @@ export function updateThemeIcon(isDark, isSystem) {
 }
 
 /**
- * Met à jour la couleur du thème (meta tag)
- * @param {boolean} isDark - Si le thème sombre est actif
- */
-function updateThemeColor(isDark) {
-    const themeColorMeta = document.getElementById('theme-color');
-    if (themeColorMeta) {
-        themeColorMeta.setAttribute('content', isDark ? '#1a1a23' : '#ffffff');
-    }
-}
-
-/**
  * Applique le thème
  * @param {boolean} isDark - Si le thème sombre doit être appliqué
  */
@@ -43,7 +32,6 @@ function applyTheme(isDark) {
         document.documentElement.classList.remove('dark');
     }
     updateThemeIcon(isDark, false);
-    updateThemeColor(isDark);
 }
 
 /**

@@ -392,9 +392,10 @@ export function setRandomExample() {
             const availableWidth = DOM.currentExample.clientWidth - __marqueePaddingCache.left - __marqueePaddingCache.right;
             const scrollWidth = marqueeContent.scrollWidth;
 
-            if (scrollWidth > availableWidth) {
+            const overflow = scrollWidth - availableWidth;
+            if (overflow > 15) {
                 DOM.currentExample.classList.add('scrolling');
-                const scrollDistance = -(scrollWidth - availableWidth + 10);
+                const scrollDistance = -(overflow + 10);
                 DOM.currentExample.style.setProperty('--scroll-distance', `${scrollDistance}px`);
                 const baseDuration = Math.max(4, (scrollWidth - availableWidth) / 25);
                 marqueeContent.style.animationDuration = `${baseDuration}s`;

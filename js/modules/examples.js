@@ -41,32 +41,32 @@ export const examples = [
 
     // --- Projets militaires et industriels ---
     { id: "suffren", value: 1500000000, label: "le prix d'un sous-marin Suffren" },
-    { id: "epr", value: 19000000000, label: "le coût de la centrale EPR de Flamanville" },
-    { id: "pang", value: 10000000000, label: "le coût du porte-avions PANG" },
+    { id: "epr", value: 19000000000, label: "le coût de construction de la centrale EPR de Flamanville" },
+    { id: "pang", value: 10000000000, label: "le coût de construction d'un porte-avions PANG" },
     { id: "ariane", value: 115000000, label: "le coût d'un lancement d'Ariane 6" },
 
     // --- Grands projets et infrastructures ---
     { id: "jo_paris", value: 6650000000, label: "le coût public des JO Paris 2024" },
-    { id: "tunnel_manche", value: 50000000000, label: "le coût du tunnel sous la Manche (ajusté de l'inflation)" },
-    { id: "manhattan", value: 28500000000, label: "le coût du Projet Manhattan (ajusté de l'inflation)" },
-    { id: "messmer", value: 130000000000, label: "le coût du Plan Messmer (ajusté de l'inflation)" },
-    { id: "apollo", value: 220000000000, label: "le coût du programme Apollo (ajusté de l'inflation)" },
-    { id: "cern", value: 5250000000, label: "le coût du CERN (LHC) (ajusté de l'inflation)" },
-    { id: "iss", value: 210000000000, label: "le coût de la Station spatiale internationale (ISS) (ajusté de l'inflation)" },
-    { id: "iter", value: 25000000000, label: "le coût du Projet ITER" },
-    { id: "hinkley", value: 50000000000, label: "le coût de la centrale de Hinkley Point C" },
+    { id: "tunnel_manche", value: 50000000000, label: "le coût de construction du tunnel sous la Manche (ajusté de l'inflation)" },
+    { id: "manhattan", value: 28500000000, label: "le coût de construction du Projet Manhattan (ajusté de l'inflation)" },
+    { id: "messmer", value: 130000000000, label: "le coût de construction du Plan Messmer (ajusté de l'inflation)" },
+    { id: "apollo", value: 220000000000, label: "le coût de construction du programme Apollo (ajusté de l'inflation)" },
+    { id: "cern", value: 5250000000, label: "le coût de construction du CERN (LHC) (ajusté de l'inflation)" },
+    { id: "iss", value: 210000000000, label: "le coût de construction de la Station spatiale internationale (ISS) (ajusté de l'inflation)" },
+    { id: "iter", value: 25000000000, label: "le coût de construction du Projet ITER" },
+    { id: "hinkley", value: 5000000000, label: "le coût de construction de la centrale de Hinkley Point C" },
 
     // --- Monuments français ---
-    { id: "tour_eiffel", value: 35000000, label: "la construction de la Tour Eiffel (ajusté de l'inflation)" },
-    { id: "arc_triomphe", value: 70000000, label: "la construction de l'Arc de Triomphe (ajusté de l'inflation)" },
-    { id: "opera_garnier", value: 330000000, label: "la construction de l'Opéra Garnier (ajusté de l'inflation)" },
-    { id: "centre_pompidou", value: 150000000, label: "la construction du Centre Pompidou (ajusté de l'inflation)" },
-    { id: "grande_arche", value: 240000000, label: "la construction de la Grande Arche de La Défense (ajusté de l'inflation)" },
-    { id: "opera_bastille", value: 775000000, label: "la construction de l'Opéra Bastille (ajusté de l'inflation)" },
-    { id: "pyramide_louvre", value: 25000000, label: "le coût de la Pyramide du Louvre (ajusté de l'inflation)" },
-    { id: "stade_france", value: 575000000, label: "le coût du Stade de France (ajusté de l'inflation)" },
-    { id: "pont_normandie", value: 650000000, label: "le coût du Pont de Normandie (ajusté de l'inflation)" },
-    { id: "viaduc_millau", value: 560000000, label: "le coût du Viaduc de Millau (ajusté de l'inflation)" },
+    { id: "tour_eiffel", value: 35000000, label: "le coût de construction de la Tour Eiffel (ajusté de l'inflation)" },
+    { id: "arc_triomphe", value: 70000000, label: "le coût de construction de l'Arc de Triomphe (ajusté de l'inflation)" },
+    { id: "opera_garnier", value: 330000000, label: "le coût de construction de l'Opéra Garnier (ajusté de l'inflation)" },
+    { id: "centre_pompidou", value: 150000000, label: "le coût de construction du Centre Pompidou (ajusté de l'inflation)" },
+    { id: "grande_arche", value: 240000000, label: "le coût de construction de la Grande Arche de La Défense (ajusté de l'inflation)" },
+    { id: "opera_bastille", value: 775000000, label: "le coût de construction de l'Opéra Bastille (ajusté de l'inflation)" },
+    { id: "pyramide_louvre", value: 25000000, label: "le coût de construction de la Pyramide du Louvre (ajusté de l'inflation)" },
+    { id: "stade_france", value: 575000000, label: "le coût de construction du Stade de France (ajusté de l'inflation)" },
+    { id: "pont_normandie", value: 650000000, label: "le coût de construction du Pont de Normandie (ajusté de l'inflation)" },
+    { id: "viaduc_millau", value: 560000000, label: "le coût de construction du Viaduc de Millau (ajusté de l'inflation)" },
 
     // --- Marchés et valeurs boursières ---
     { id: "gold_market_cap", value: 26000000000000, label: "la valeur de l'or mondial (au 31/12/2025)" },
@@ -86,7 +86,7 @@ export const examples = [
     { id: "frites_double", value: 2, label: "une double portion de frites à la cantine" },
 
     // --- Publics ---
-    { id: "place_prison", value: 270000, label: "la construction d'une place de prison" }
+    { id: "place_prison", value: 270000, label: "le coût de construction d'une place de prison" }
 ];
 
 const examplesMap = new Map(examples.map(ex => [ex.id, ex]));

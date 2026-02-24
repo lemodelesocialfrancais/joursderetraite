@@ -6,6 +6,9 @@
 import { state } from './state.js';
 import { showError, showWarning, showSuccess } from './toast.js';
 
+// === URL DE PARTAGE ===
+const SHARE_URL = 'https://lemodelesocialfrancais.github.io/joursderetraite/';
+
 // === REGEX PARTAGÉES (pré-compilées pour performance) ===
 const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 
@@ -127,14 +130,19 @@ function getResultText(mode) {
  * @param {string} mode - 'temporal' ou 'financial'
  */
 export function copyResult(mode = 'temporal') {
-    const resultText = getResultText(mode);
+    const message = getShareMessage(mode, true);
     const copyBtn = document.querySelector(`#result-section-${mode} .copy-btn`);
 
     if (!copyBtn) {
         console.error("Bouton de copie introuvable");
     }
 
-    navigator.clipboard.writeText(resultText).then(function () {
+    if (!message) {
+        showWarning("Aucun résultat à copier. Veuillez d'abord effectuer un calcul.");
+        return;
+    }
+
+    navigator.clipboard.writeText(message).then(function () {
         if (copyBtn) {
             const originalIcon = copyBtn.innerHTML;
             copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
@@ -151,16 +159,17 @@ export function copyResult(mode = 'temporal') {
 /**
  * Génère le message de partage
  * @param {string} mode - 'temporal' ou 'financial'
+ * @param {boolean} includeUrl - Inclure l'URL dans le message (défaut: true)
  * @returns {string} Le message formaté
  */
-function getShareMessage(mode) {
+function getShareMessage(mode, includeUrl = true) {
     const resultText = getResultText(mode);
 
     if (!resultText) {
         return null;
     }
 
-    const currentUrl = window.location.href;
+    const currentUrl = SHARE_URL;
     
     let message;
     if (mode === 'temporal') {
@@ -169,7 +178,7 @@ function getShareMessage(mode) {
         // Si c'est un exemple, on utilise le label de l'exemple
         if (state.currentExampleLabel) {
             description = state.currentExampleLabel;
-            message = `J'ai calculé : ${description} = ${resultText} de retraites.\nÀ vous de tester sur ${currentUrl}`;
+            message = `${description} représentent ${resultText} de prestations retraites (base + complémenataires).`;
         } else {
             // Sinon c'est un montant personnalisé, on utilise le montant formaté
             const amountInput = document.getElementById('amount');
@@ -181,14 +190,167 @@ function getShareMessage(mode) {
                 maximumFractionDigits: 0
             }).format(amountValue);
             
-            message = `J'ai calculé : ${description} = ${resultText} de retraites.\nÀ vous de tester sur ${currentUrl}`;
+            message = `${description} représentent ${resultText} de prestations retraites (base + complémenataires).`;
         }
+        
+        message = message.charAt(0).toUpperCase() + message.slice(1);
     } else {
         const comparisonShort = resultText.replace(/\.$/, '');
-        message = `J'ai calculé : ${comparisonShort}.\nÀ vous de tester sur ${currentUrl}`;
+        message = `${comparisonShort}.`;
+    }
+
+    if (includeUrl) {
+        const displayUrl = currentUrl.replace(/^https?:\/\//, '');
+        // Assurer des sauts de ligne corrects pour LinkedIn
+        message += `\nÀ vous de tester sur :\n${displayUrl}`;
+        console.log('Final message with URL:', message);
     }
 
     return message;
+}
+
+/**
+ * Génère une image dynamique avec le texte du résultat pour Pinterest
+ * @param {string} mode - 'temporal' ou 'financial'
+ * @returns {Promise<Blob>} Le blob de l'image générée
+ */
+async function generateShareImageBlob(mode) {
+    const resultText = getResultText(mode);
+    if (!resultText) {
+        return null;
+    }
+
+    // Créer le canvas - format carré Pinterest
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Dimensions carrées (1000x1000)
+    canvas.width = 1000;
+    canvas.height = 1000;
+    
+    // Fond dégradé (bleu marine et doré, thème du site)
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#112240');
+    gradient.addColorStop(1, '#0a192f');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Ajouter une bordure dorée
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 8;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+    
+    // Titre principal
+    ctx.fillStyle = '#e6c55a';
+    ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('JOURS DE RETRAITE', canvas.width / 2, 80);
+    
+    // Ligne décorative
+    ctx.beginPath();
+    ctx.moveTo(100, 110);
+    ctx.lineTo(canvas.width - 100, 110);
+    ctx.strokeStyle = '#d4af37';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    
+    // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
+    let fullText;
+    if (mode === 'temporal') {
+        // Utiliser le label de l'exemple au lieu du montant
+        if (state.currentExampleLabel) {
+            // Capitaliser la première lettre
+            const label = state.currentExampleLabel.charAt(0).toUpperCase() + state.currentExampleLabel.slice(1);
+            fullText = `${label}\nreprésente\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
+        } else {
+            // Fallback vers le montant si pas d'exemple
+            const amountInput = document.getElementById('amount');
+            const amountValue = amountInput ? parseFloat(amountInput.value.replace(/\u00A0/g, '').replace(/,/g, '.')) : 0;
+            const formattedAmount = new Intl.NumberFormat('fr-FR', {
+                style: 'currency',
+                currency: 'EUR',
+                maximumFractionDigits: 0
+            }).format(amountValue);
+            fullText = `${formattedAmount}\nreprésentent\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
+        }
+    } else {
+        fullText = `${resultText}\n(base + complémentaires).`;
+    }
+    
+    // Texte principal - PLUS GRAND pour remplir l'espace
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    
+    // Gérer le retour à la ligne avec wrapText - texte dans la moitié supérieure
+    const lines = wrapText(ctx, fullText, canvas.width - 100);
+    const lineHeight = 70;
+    const textBlockHeight = lines.length * lineHeight;
+    // Positionner le texte pour remplir l'espace
+    const textStartY = 200;
+    
+    lines.forEach((line, index) => {
+        ctx.fillText(line, canvas.width / 2, textStartY + index * lineHeight);
+    });
+    
+    // Ajouter l'icône dans la moitié inférieure
+    return new Promise((resolve) => {
+        const iconUrl = 'https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png';
+        const iconImg = new Image();
+        iconImg.crossOrigin = 'anonymous';
+        iconImg.onload = function() {
+            // Dessiner l'icône plus haut et plus grand
+            const iconSize = 380;
+            const iconX = (canvas.width - iconSize) / 2;
+            const iconY = 520; // Plus haut
+            ctx.drawImage(iconImg, iconX, iconY, iconSize, iconSize);
+            
+            // URL en bas - PLUS GRAND et plus haut
+            ctx.fillStyle = '#d4af37';
+            ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillText('lemodelesocialfrancais.github.io/joursderetraite', canvas.width / 2, 960);
+            
+            // Convertir en Blob
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, 'image/png');
+        };
+        iconImg.onerror = function() {
+            // Si l'icône ne charge pas, résoudre avec le texte seulement
+            ctx.fillStyle = '#d4af37';
+            ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+            ctx.fillText('lemodelesocialfrancais.github.io/joursderetraite', canvas.width / 2, 960);
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, 'image/png');
+        };
+        iconImg.src = iconUrl;
+    });
+}
+
+/**
+ * Fonction helper pour gérer le retour à la ligne du texte
+ * @param {CanvasRenderingContext2D} ctx - Contexte canvas
+ * @param {string} text - Texte à wraps
+ * @param {number} maxWidth - Largeur maximale
+ * @returns {string[]} Tableau de lignes
+ */
+function wrapText(ctx, text, maxWidth) {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+    
+    for (let i = 1; i < words.length; i++) {
+        const word = words[i];
+        const width = ctx.measureText(currentLine + ' ' + word).width;
+        if (width < maxWidth) {
+            currentLine += ' ' + word;
+        } else {
+            lines.push(currentLine);
+            currentLine = word;
+        }
+    }
+    lines.push(currentLine);
+    return lines;
 }
 
 /**
@@ -196,32 +358,112 @@ function getShareMessage(mode) {
  * @param {string} platform - La plateforme cible
  */
 export function shareOnSocial(platform) {
-    const message = getShareMessage(state.currentActiveMode);
-    const currentUrl = window.location.href;
-    // Le message contient déjà l'URL, pas besoin de l'ajouter à nouveau
+    // Ces plateformes reçoivent l'URL via un paramètre séparé, donc on ne l'inclut pas dans le message
+    const platformsWithUrlParam = ['facebook', 'messenger'];
+    const platformsWithImageParam = ['pinterest'];
+    const includeUrl = !platformsWithUrlParam.includes(platform);
+    const includeImage = platformsWithImageParam.includes(platform);
+    
+    const message = getShareMessage(state.currentActiveMode, includeUrl);
+    const currentUrl = SHARE_URL;
 
-    // Liste des plateformes avec partage direct par URL
-    const directPlatforms = {
-        'facebook': `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(message)}`,
-        'twitter': `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`,
-        'bluesky': `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`,
-        'linkedin': `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(currentUrl)}`,
-        'whatsapp': `https://wa.me/?text=${encodeURIComponent(message)}`,
-        'telegram': `https://t.me/share?text=${encodeURIComponent(message)}`,
-        'pinterest': `https://pinterest.com/pin/create/button/?description=${encodeURIComponent(message)}`,
-        'messenger': `https://www.messenger.com/share/?link=${encodeURIComponent(currentUrl)}`
-    };
+    // Génère l'URL de partage pour chaque plateforme au moment de l'appel
+    let shareUrl;
+    switch (platform) {
+        case 'facebook':
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(message)}`;
+            break;
+        case 'twitter':
+            shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+            break;
+        case 'bluesky':
+            shareUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
+            break;
+        case 'linkedin':
+            console.log('LinkedIn message:', message);
+            const encodedMessage = encodeURIComponent(message);
+            console.log('Encoded message:', encodedMessage);
+            shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodedMessage}`;
+            break;
+        case 'whatsapp':
+            shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+            break;
+        case 'telegram':
+            shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
+            break;
+        case 'instagram':
+            // Instagram : utiliser l'API Web Share sur mobile (même principe que Pinterest)
+            if (navigator.share && isMobile()) {
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (blob) {
+                        const file = new File([blob], 'jours-de-retraite.png', { type: 'image/png' });
+                        
+                        navigator.share({
+                            title: 'JOURS DE RETRAITE',
+                            text: message || 'Découvrez l\'équivalent temps de cotisations de retraite',
+                            files: [file]
+                        }).catch(err => {
+                            console.warn('Erreur Web Share Instagram:', err);
+                            showWarning("Partage Instagram non disponible. Essayez une autre méthode.");
+                        });
+                    }
+                });
+                return;
+            } else {
+                // Instagram web n'a pas d'API de partage directe
+                // Proposer de télécharger l'image
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = 'jours-de-retraite-instagram.png';
+                        link.href = url;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showSuccess("Image téléchargée ! Ouvrez Instagram et partagez cette image.");
+                    }
+                });
+                return;
+            }
+        case 'pinterest':
+            // Pour Pinterest : utiliser l'API Web Share si disponible (mobile)
+            // Sinon, ouvrir Pinterest avec l'image statique
+            
+            // Essayer d'abord avec l'API Web Share (mobile)
+            if (navigator.share && isMobile()) {
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (blob) {
+                        // Créer un fichier à partir du blob
+                        const file = new File([blob], 'jours-de-retraite.png', { type: 'image/png' });
+                        
+                        navigator.share({
+                            title: 'JOURS DE RETRAITE',
+                            text: message || 'Découvrez l\'équivalent temps de cotisations de retraite',
+                            files: [file]
+                        }).catch(err => {
+                            console.warn('Erreur Web Share:', err);
+                            // Fallback vers Pinterest classique
+                            openPinterestFallback(currentUrl, message);
+                        });
+                    } else {
+                        openPinterestFallback(currentUrl, message);
+                    }
+                });
+            } else {
+                // Sur desktop ou si Web Share non disponible, utiliser Pinterest classique
+                openPinterestFallback(currentUrl, message);
+            }
+            return;
+        case 'messenger':
+            shareUrl = `fb-messenger://share?link=${encodeURIComponent(currentUrl)}`;
+            break;
+        default:
+            shareUrl = null;
+    }
 
-    if (directPlatforms[platform]) {
-        // Traitement spécial pour LinkedIn : partage URL + copie du message séparément
-        if (platform === 'linkedin') {
-            window.open(directPlatforms[platform], '_blank');
-            navigator.clipboard.writeText(message).catch(err => {
-                console.warn('Erreur copie message LinkedIn:', err);
-            });
-        } else {
-            window.open(directPlatforms[platform], '_blank');
-        }
+    if (shareUrl) {
+        window.open(shareUrl, '_blank');
         return;
     }
 
@@ -278,12 +520,17 @@ export function shareVia(method) {
 }
 
 /**
- * Détecte la capacité SMS et cache le bouton si non disponible
+ * Détecte la capacité SMS et Messenger, cache les boutons sur desktop
  */
 export function checkSMSCapability() {
     if (!isMobile()) {
         const smsButtons = document.querySelectorAll('button[data-action="sms"]');
         smsButtons.forEach(btn => {
+            btn.style.display = 'none';
+        });
+        
+        const messengerButtons = document.querySelectorAll('button[data-platform="messenger"]');
+        messengerButtons.forEach(btn => {
             btn.style.display = 'none';
         });
     }
@@ -307,37 +554,35 @@ function detectPlatform() {
  * @param {string} mode - 'temporal' ou 'financial'
  */
 export function nativeShare(mode = 'temporal') {
-    const message = getShareMessage(mode);
-
-    if (!message) {
+    if (!getResultText(mode)) {
         showWarning("Aucun résultat à partager. Veuillez d'abord effectuer un calcul.");
         return;
     }
 
     const shareTitle = "Incroyable perspective sur les retraites en France!";
-    const shareText = message;
-    
     const platform = detectPlatform();
 
-    // Sur Windows et Linux : utiliser la popup de copie (le partage natif ne transmet pas le texte)
+    // Sur Windows et Linux : utiliser la popup de copie avec URL incluse
     if (platform.isWindows || platform.isLinux) {
-        showShareHelperPopup(shareText);
+        const messageWithUrl = getShareMessage(mode, true);
+        showShareHelperPopup(messageWithUrl);
         return;
     }
 
-    // Sur Mac et mobile : utiliser le partage natif (fonctionne avec texte)
+    // Sur Mac et mobile : utiliser le partage natif (URL passée séparément)
+    const messageWithoutUrl = getShareMessage(mode, false);
     if (navigator.share) {
         navigator.share({
             title: shareTitle,
-            text: shareText,
-            url: window.location.href
+            text: messageWithoutUrl,
+            url: SHARE_URL
         }).catch(error => {
             if (error.name !== 'AbortError') {
-                fallbackShare(shareText);
+                fallbackShare(messageWithoutUrl);
             }
         });
     } else {
-        fallbackShare(shareText);
+        fallbackShare(messageWithoutUrl);
     }
 }
 
@@ -508,6 +753,16 @@ function showShareHelperPopup(text) {
         }
     };
     document.addEventListener('keydown', escapeHandler);
+}
+
+/**
+ * Ouvre Pinterest avec l'image statique (fallback)
+ * @param {string} currentUrl - URL à partager
+ * @param {string} message - Message de partage
+ */
+function openPinterestFallback(currentUrl, message) {
+    const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(currentUrl)}&description=${encodeURIComponent(message || 'Découvrez l\'équivalent temps de cotisations de retraite')}&media=${encodeURIComponent('https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png')}`;
+    window.open(pinterestUrl, '_blank');
 }
 
 /**
