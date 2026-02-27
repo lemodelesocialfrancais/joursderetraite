@@ -20,24 +20,24 @@ export const examples = [
 
     // --- Salaires et revenus ---
     { id: "mbappe", value: 82000000, label: "le salaire annuel de Kylian Mbappé (2025)" },
-    { id: "pdg", value: 6500000, label: "le salaire annuel moyen d'un PDG du CAC 40" },
-    { id: "macron", value: 192456, label: "le salaire annuel d'Emmanuel Macron" },
-    { id: "depute", value: 91649, label: "le salaire annuel d'un député" },
-    { id: "senateur", value: 91649, label: "le salaire annuel d'un sénateur" },
-    { id: "ministre", value: 128304, label: "le salaire annuel d'un ministre" },
+    { id: "pdg", value: 6500000, label: "la rémunération annuelle moyenne (fixe + variable) d'un PDG du CAC 40" },
+    { id: "macron", value: 192456, label: "la rémunération annuelle brute estimée d'Emmanuel Macron" },
+    { id: "depute", value: 91649, label: "la rémunération annuelle brute estimée d'un député" },
+    { id: "senateur", value: 91649, label: "la rémunération annuelle brute estimée d'un sénateur" },
+    { id: "ministre", value: 128304, label: "la rémunération annuelle brute estimée d'un ministre" },
 
     // --- Postes publics ---
-    { id: "infirmiere", value: 46000, label: "un poste d'infirmière (coût annuel)" },
-    { id: "policier", value: 46000, label: "un poste de policier (coût annuel)" },
-    { id: "pompier", value: 44700, label: "un poste de pompier (coût annuel)" },
-    { id: "professeur", value: 46000, label: "un poste de professeur (coût annuel)" },
-    { id: "nounou", value: 20000, label: "un poste de nounou en crèche (coût annuel)" },
+    { id: "infirmiere", value: 46000, label: "le salaire brut annuel d'une infirmière" },
+    { id: "policier", value: 46000, label: "le salaire brut annuel d'un policier" },
+    { id: "pompier", value: 44700, label: "le salaire brut annuel d'un sapeur-pompier" },
+    { id: "professeur", value: 46000, label: "le salaire brut annuel d'un professeur" },
+    { id: "nounou", value: 20000, label: "le salaire brut annuel d'une auxiliaire de crèche" },
 
     // --- Immobilier et biens ---
     { id: "eti", value: 1324000000000, label: "la capitalisation totale du CAC 40 (31/12/2025)" },
     { id: "appartement_paris", value: 565000, label: "le prix moyen d'un appartement à Paris" },
     { id: "superyacht", value: 150000000, label: "le prix d'un superyacht de luxe" },
-    { id: "avion_presidentiel", value: 225000000, label: "le coût de l'avion présidentiel français (A330)" },
+    { id: "avion_presidentiel", value: 225000000, label: "le coût estimé d'acquisition et d'aménagement de l'avion présidentiel français (A330)" },
 
     // --- Projets militaires et industriels ---
     { id: "suffren", value: 1500000000, label: "le prix d'un sous-marin Suffren" },
@@ -46,12 +46,12 @@ export const examples = [
     { id: "ariane", value: 115000000, label: "le coût d'un lancement d'Ariane 6" },
 
     // --- Grands projets et infrastructures ---
-    { id: "jo_paris", value: 6650000000, label: "le coût public des JO Paris 2024" },
+    { id: "jo_paris", value: 6650000000, label: "les dépenses publiques estimées liées aux JO de Paris 2024" },
     { id: "tunnel_manche", value: 50000000000, label: "le coût de construction du tunnel sous la Manche (ajusté de l'inflation)" },
     { id: "manhattan", value: 28500000000, label: "le coût de construction du Projet Manhattan (ajusté de l'inflation)" },
     { id: "messmer", value: 130000000000, label: "le coût de construction du Plan Messmer (ajusté de l'inflation)" },
     { id: "apollo", value: 220000000000, label: "le coût de construction du programme Apollo (ajusté de l'inflation)" },
-    { id: "cern", value: 5250000000, label: "le coût de construction du CERN (LHC) (ajusté de l'inflation)" },
+    { id: "cern", value: 5250000000, label: "le coût de construction du LHC (au CERN) (ajusté de l'inflation)" },
     { id: "iss", value: 210000000000, label: "le coût de construction de la Station spatiale internationale (ISS) (ajusté de l'inflation)" },
     { id: "iter", value: 25000000000, label: "le coût de construction du Projet ITER" },
     { id: "hinkley", value: 5000000000, label: "le coût de construction de la centrale de Hinkley Point C" },
@@ -69,13 +69,13 @@ export const examples = [
     { id: "viaduc_millau", value: 560000000, label: "le coût de construction du Viaduc de Millau (ajusté de l'inflation)" },
 
     // --- Marchés et valeurs boursières ---
-    { id: "gold_market_cap", value: 26000000000000, label: "la valeur de l'or mondial (au 31/12/2025)" },
-    { id: "btc_market_cap", value: 1500000000000, label: "la valeur de tous les Bitcoins (au 31/12/2025)" },
-    { id: "apple_market_cap", value: 3423000000000, label: "la valeur d'Apple (au 31/12/2025)" },
-    { id: "google_market_cap", value: 3149000000000, label: "la valeur de Google (au 31/12/2025)" },
-    { id: "amazon_market_cap", value: 2102000000000, label: "la valeur d'Amazon (au 31/12/2025)" },
-    { id: "tesla_market_cap", value: 1277000000000, label: "la valeur de Tesla (au 31/12/2025)" },
-    { id: "fortune_arnault", value: 172800000000, label: "la fortune de Bernard Arnault (au 31/12/2025)" },
+    { id: "gold_market_cap", value: 26000000000000, label: "la capitalisation estimée du marché mondial de l'or (au 31/12/2025)" },
+    { id: "btc_market_cap", value: 1500000000000, label: "la capitalisation de tous les bitcoins (au 31/12/2025)" },
+    { id: "apple_market_cap", value: 3423000000000, label: "la capitalisation boursière d'Apple (au 31/12/2025)" },
+    { id: "google_market_cap", value: 3149000000000, label: "la capitalisation boursière de Google (au 31/12/2025)" },
+    { id: "amazon_market_cap", value: 2102000000000, label: "la capitalisation boursière d'Amazon (au 31/12/2025)" },
+    { id: "tesla_market_cap", value: 1277000000000, label: "la capitalisation boursière de Tesla (au 31/12/2025)" },
+    { id: "fortune_arnault", value: 172800000000, label: "l'estimation de la fortune de Bernard Arnault (au 31/12/2025)" },
     { id: "pib_france", value: 2980000000000, label: "le PIB de la France (2025)" },
 
     // --- Divertissement ---
@@ -92,21 +92,43 @@ export const examples = [
 const examplesMap = new Map(examples.map(ex => [ex.id, ex]));
 
 let lastIndex = -1;
+let remainingExampleIndices = [];
+
+/**
+ * Reconstruit et mélange la liste des indices restants à afficher.
+ * Évite de rejouer immédiatement le dernier exemple au changement de cycle.
+ */
+function refillRemainingExampleIndices() {
+    remainingExampleIndices = examples.map((_, index) => index);
+
+    if (lastIndex >= 0 && examples.length > 1) {
+        remainingExampleIndices = remainingExampleIndices.filter(index => index !== lastIndex);
+    }
+
+    // Fisher-Yates shuffle
+    for (let i = remainingExampleIndices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [remainingExampleIndices[i], remainingExampleIndices[j]] = [remainingExampleIndices[j], remainingExampleIndices[i]];
+    }
+}
 
 /**
  * Obtient un exemple aléatoire du tableau (différent du précédent)
  * @returns {Object} Un objet exemple avec value et label
  */
 export function getRandomExample() {
-    if (examples.length <= 1) return examples[0];
+    if (examples.length <= 1) {
+        lastIndex = 0;
+        return examples[0];
+    }
 
-    let randomIndex;
-    do {
-        randomIndex = Math.floor(Math.random() * examples.length);
-    } while (randomIndex === lastIndex);
+    if (remainingExampleIndices.length === 0) {
+        refillRemainingExampleIndices();
+    }
 
-    lastIndex = randomIndex;
-    return examples[randomIndex];
+    const nextIndex = remainingExampleIndices.pop();
+    lastIndex = nextIndex;
+    return examples[nextIndex];
 }
 
 /**

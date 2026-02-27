@@ -11,6 +11,21 @@ const SHARE_URL = 'https://lemodelesocialfrancais.github.io/joursderetraite/';
 
 // === REGEX PARTAGÉES (pré-compilées pour performance) ===
 const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+const INSTAGRAM_WEB_URL = 'https://www.instagram.com/';
+const INSTAGRAM_MOBILE_CAMERA_URL = 'instagram://camera';
+const SNAPCHAT_WEB_URL = 'https://web.snapchat.com/';
+const SNAPCHAT_MOBILE_URL = 'https://www.snapchat.com/';
+const TIKTOK_WEB_URL = 'https://www.tiktok.com/upload';
+const TIKTOK_MOBILE_URL = 'https://www.tiktok.com/';
+const TUMBLR_WEB_URL = 'https://www.tumblr.com/new/photo';
+const INSTAGRAM_MODAL_ID = 'instagram-share-modal';
+const INSTAGRAM_MODAL_OVERLAY_ID = 'instagram-share-overlay';
+const INSTAGRAM_DRAG_FILENAME = 'jours-de-retraite-instagram.png';
+const SNAPCHAT_DRAG_FILENAME = 'jours-de-retraite-snapchat.png';
+const TIKTOK_DRAG_FILENAME = 'jours-de-retraite-tiktok.png';
+const TUMBLR_DRAG_FILENAME = 'jours-de-retraite-tumblr.png';
+
+let closeInstagramModal = null;
 
 /**
  * Détecte si l'utilisateur est sur mobile
@@ -26,6 +41,522 @@ function isMobile() {
  */
 export function isDesktop() {
     return !isMobile();
+}
+
+/**
+ * Ouvre une popup de partage centrée (desktop)
+ * @param {string} url
+ * @param {string} popupName
+ * @param {number} width
+ * @param {number} height
+ * @returns {Window|null}
+ */
+function openCenteredSharePopup(url, popupName = 'share-popup', width = 740, height = 760) {
+    const screenLeft = typeof window.screenLeft !== 'undefined' ? window.screenLeft : window.screenX;
+    const screenTop = typeof window.screenTop !== 'undefined' ? window.screenTop : window.screenY;
+    const viewportWidth = window.innerWidth || document.documentElement.clientWidth || screen.width;
+    const viewportHeight = window.innerHeight || document.documentElement.clientHeight || screen.height;
+
+    const left = Math.max(0, Math.round(screenLeft + (viewportWidth - width) / 2));
+    const top = Math.max(0, Math.round(screenTop + (viewportHeight - height) / 2));
+    const features = [
+        `width=${width}`,
+        `height=${height}`,
+        `left=${left}`,
+        `top=${top}`,
+        'scrollbars=yes',
+        'resizable=yes',
+        'toolbar=no',
+        'menubar=no',
+        'location=no',
+        'status=no'
+    ].join(',');
+
+    const popup = window.open(url, popupName, features);
+    if (popup && typeof popup.focus === 'function') {
+        popup.focus();
+    }
+
+    return popup;
+}
+
+/**
+ * Stratégie d'ouverture des liens de partage:
+ * - Desktop: popup centrée avec fallback nouvel onglet
+ * - Mobile: navigation directe (permet le réveil de l'app native si disponible)
+ * @param {string} url
+ * @param {string} popupName
+ * @param {number} width
+ * @param {number} height
+ */
+function openShareUrlWithDeviceStrategy(url, popupName = 'social-share', width = 760, height = 760) {
+    if (!url) return;
+
+    if (isDesktop()) {
+        const popup = openCenteredSharePopup(url, popupName, width, height);
+        if (!popup) {
+            window.open(url, '_blank', 'noopener,noreferrer');
+        }
+        return;
+    }
+
+    window.location.href = url;
+}
+
+/**
+ * Tente d'ouvrir une app mobile via deep link, puis fallback web si l'app n'est pas disponible.
+ * @param {string} appUrl
+ * @param {string} fallbackUrl
+ * @param {number} timeoutMs
+ */
+function openMobileAppWithFallback(appUrl, fallbackUrl, timeoutMs = 1200) {
+    let appOpened = false;
+    let timerId = null;
+
+    function cleanup() {
+        if (timerId) {
+            window.clearTimeout(timerId);
+            timerId = null;
+        }
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+        window.removeEventListener('pagehide', handlePageHide);
+    }
+
+    function markAppOpened() {
+        appOpened = true;
+        cleanup();
+    }
+
+    function handleVisibilityChange() {
+        if (document.hidden) {
+            markAppOpened();
+        }
+    }
+
+    function handlePageHide() {
+        markAppOpened();
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('pagehide', handlePageHide);
+
+    timerId = window.setTimeout(function () {
+        if (!appOpened && fallbackUrl) {
+            window.location.href = fallbackUrl;
+        }
+        cleanup();
+    }, timeoutMs);
+
+    window.location.href = appUrl;
+}
+
+/**
+ * Vérifie si la copie d'image vers le presse-papiers est supportée
+ * @returns {boolean}
+ */
+function supportsImageClipboard() {
+    return window.isSecureContext &&
+        typeof navigator.clipboard?.write === 'function' &&
+        typeof window.ClipboardItem !== 'undefined';
+}
+
+/**
+ * Garantit un Blob PNG, requis par ClipboardItem
+ * @param {Blob} sourceBlob
+ * @returns {Promise<Blob>}
+ */
+function ensurePngBlob(sourceBlob) {
+    if (sourceBlob && sourceBlob.type === 'image/png') {
+        return Promise.resolve(sourceBlob);
+    }
+
+    return new Promise((resolve, reject) => {
+        if (!sourceBlob) {
+            reject(new Error('Blob image introuvable'));
+            return;
+        }
+
+        const objectUrl = URL.createObjectURL(sourceBlob);
+        const image = new Image();
+
+        image.onload = function () {
+            const canvas = document.createElement('canvas');
+            canvas.width = image.naturalWidth || image.width;
+            canvas.height = image.naturalHeight || image.height;
+            const ctx = canvas.getContext('2d');
+
+            if (!ctx) {
+                URL.revokeObjectURL(objectUrl);
+                reject(new Error('Canvas indisponible'));
+                return;
+            }
+
+            ctx.drawImage(image, 0, 0);
+            canvas.toBlob(function (pngBlob) {
+                URL.revokeObjectURL(objectUrl);
+                if (!pngBlob) {
+                    reject(new Error('Conversion PNG impossible'));
+                    return;
+                }
+                resolve(pngBlob);
+            }, 'image/png');
+        };
+
+        image.onerror = function () {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error("Impossible de convertir l'image en PNG"));
+        };
+
+        image.src = objectUrl;
+    });
+}
+
+/**
+ * Ferme le modal Instagram actif (si présent)
+ */
+function closeInstagramShareModal() {
+    if (typeof closeInstagramModal === 'function') {
+        closeInstagramModal();
+        closeInstagramModal = null;
+    }
+}
+
+
+/**
+ * Ouvre un modal desktop pour partager une image (Instagram/Snapchat)
+ * @param {Object} options
+ * @param {string} options.imageUrl
+ * @param {string} [options.imageAlt]
+ * @param {string} [options.openUrl]
+ * @param {string} [options.openPopupName]
+ * @param {number} [options.openPopupWidth]
+ * @param {number} [options.openPopupHeight]
+ * @param {Blob|null} [options.imageBlob]
+ * @param {string} [options.filename]
+ * @param {string} [options.modalTitle]
+ * @param {string} [options.modalInstructions]
+ * @param {string} [options.dragHintText]
+ * @param {string} [options.openButtonLabel]
+ * @param {boolean} [options.enableClipboard]
+ * @param {Function} [options.onClose]
+ */
+export function openInstagramDesktopShareModal(options = {}) {
+    const imageUrl = options.imageUrl;
+    const imageAlt = options.imageAlt || 'Image à partager';
+    const imageBlob = options.imageBlob instanceof Blob ? options.imageBlob : null;
+    const filename = typeof options.filename === 'string' && options.filename
+        ? options.filename
+        : INSTAGRAM_DRAG_FILENAME;
+    const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+
+    const openUrl = options.openUrl || options.instagramUrl || INSTAGRAM_WEB_URL;
+    const openPopupName = options.openPopupName || 'instagram-web-share';
+    const openPopupWidth = Number(options.openPopupWidth) || 1100;
+    const openPopupHeight = Number(options.openPopupHeight) || 820;
+    const enableClipboard = options.enableClipboard === true;
+
+    const modalTitle = options.modalTitle || 'Partager sur Instagram';
+    const modalInstructions = options.modalInstructions || "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, cliquez sur Créer (+), puis importez l'image enregistrée.";
+    const dragHintText = options.dragHintText || "Vous pouvez aussi glisser-déposer l'image vers la zone d'import.";
+    const openButtonLabel = options.openButtonLabel || 'Ouvrir';
+
+    if (!imageUrl) {
+        showWarning("Aucune image disponible pour le partage.");
+        return;
+    }
+
+    closeInstagramShareModal();
+
+    const overlay = document.createElement('div');
+    overlay.id = INSTAGRAM_MODAL_OVERLAY_ID;
+    overlay.className = 'instagram-share-overlay';
+
+    const modal = document.createElement('div');
+    modal.id = INSTAGRAM_MODAL_ID;
+    modal.className = 'instagram-share-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'instagram-share-title');
+
+    const title = document.createElement('h3');
+    title.id = 'instagram-share-title';
+    title.className = 'instagram-share-title';
+    title.textContent = modalTitle;
+
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'instagram-share-close';
+    closeBtn.setAttribute('aria-label', 'Fermer la fenêtre de partage');
+    closeBtn.innerHTML = '&times;';
+
+    const header = document.createElement('div');
+    header.className = 'instagram-share-header';
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    const instructions = document.createElement('p');
+    instructions.className = 'instagram-share-instructions';
+    instructions.textContent = modalInstructions;
+
+    const imageWrap = document.createElement('div');
+    imageWrap.className = 'instagram-share-image-wrap';
+
+    const imageEl = document.createElement('img');
+    imageEl.className = 'instagram-share-image';
+    imageEl.src = imageUrl;
+    imageEl.alt = imageAlt;
+    imageEl.draggable = true;
+    imageEl.setAttribute('draggable', 'true');
+    imageWrap.appendChild(imageEl);
+
+    const dragHint = document.createElement('p');
+    dragHint.className = 'instagram-share-drag-hint';
+    dragHint.textContent = dragHintText;
+
+    const actions = document.createElement('div');
+    actions.className = 'instagram-share-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'instagram-share-save-btn';
+    saveBtn.textContent = "Sauvegarder l'image";
+
+    const openPlatformBtn = document.createElement('button');
+    openPlatformBtn.type = 'button';
+    openPlatformBtn.className = 'instagram-share-open-btn';
+    openPlatformBtn.textContent = openButtonLabel;
+
+    let copyBtn = null;
+    if (enableClipboard) {
+        copyBtn = document.createElement('button');
+        copyBtn.type = 'button';
+        copyBtn.className = 'instagram-share-copy-btn';
+        copyBtn.textContent = "Copier l'image";
+        actions.appendChild(copyBtn);
+    }
+
+    actions.appendChild(saveBtn);
+    actions.appendChild(openPlatformBtn);
+
+    modal.appendChild(header);
+    modal.appendChild(instructions);
+    modal.appendChild(imageWrap);
+    modal.appendChild(dragHint);
+    modal.appendChild(actions);
+
+    document.body.appendChild(overlay);
+    document.body.appendChild(modal);
+
+    let modalClosed = false;
+    let copyInProgress = false;
+    const dragBlobPng = imageBlob;
+
+    function finalizeClose() {
+        if (modalClosed) return;
+        modalClosed = true;
+        document.removeEventListener('keydown', handleEscape);
+        overlay.removeEventListener('click', handleOverlayClick);
+        closeBtn.removeEventListener('click', finalizeClose);
+        saveBtn.removeEventListener('click', handleSaveClick);
+        openPlatformBtn.removeEventListener('click', handleOpenPlatformClick);
+        if (copyBtn) {
+            copyBtn.removeEventListener('click', handleCopyClick);
+        }
+
+        overlay.remove();
+        modal.remove();
+
+        if (typeof onClose === 'function') {
+            onClose();
+        }
+
+        if (closeInstagramModal === finalizeClose) {
+            closeInstagramModal = null;
+        }
+    }
+
+    function handleSaveClick() {
+        if (modalClosed) return;
+        try {
+            const link = document.createElement('a');
+            link.href = imageUrl;
+            link.download = filename;
+            link.rel = 'noopener';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showSuccess("Sauvegarde de l'image lancée.");
+        } catch (error) {
+            console.error('Erreur sauvegarde image:', error);
+            showError("Impossible de sauvegarder l'image automatiquement.");
+        }
+    }
+
+    function handleOpenPlatformClick() {
+        openShareUrlWithDeviceStrategy(
+            openUrl,
+            openPopupName,
+            openPopupWidth,
+            openPopupHeight
+        );
+    }
+
+    async function resolvePngBlobForClipboard() {
+        if (imageBlob) {
+            return ensurePngBlob(imageBlob);
+        }
+
+        const response = await fetch(imageUrl, { mode: 'cors' });
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const sourceBlob = await response.blob();
+        return ensurePngBlob(sourceBlob);
+    }
+
+    async function handleCopyClick() {
+        if (!copyBtn || modalClosed || copyInProgress) return;
+
+        if (!supportsImageClipboard()) {
+            showWarning("Votre navigateur ne permet pas la copie d'image. Utilisez la sauvegarde ou le glisser-déposer.");
+            return;
+        }
+
+        copyInProgress = true;
+        const defaultLabel = "Copier l'image";
+        copyBtn.disabled = true;
+        copyBtn.textContent = 'Copie...';
+
+        try {
+            const pngBlob = await resolvePngBlobForClipboard();
+            await navigator.clipboard.write([
+                new ClipboardItem({
+                    'image/png': pngBlob
+                })
+            ]);
+
+            showSuccess("Image copiée dans le presse-papiers.");
+            copyBtn.textContent = 'Copiée !';
+            setTimeout(function () {
+                if (!modalClosed && copyBtn) {
+                    copyBtn.textContent = defaultLabel;
+                    copyBtn.disabled = false;
+                }
+            }, 1200);
+        } catch (error) {
+            console.error('Erreur copie image:', error);
+            showError("Impossible de copier l'image automatiquement.");
+            if (!modalClosed) {
+                copyBtn.textContent = defaultLabel;
+                copyBtn.disabled = false;
+            }
+        } finally {
+            copyInProgress = false;
+        }
+    }
+
+    function handleEscape(event) {
+        if (event.key === 'Escape') {
+            finalizeClose();
+        }
+    }
+
+    function handleOverlayClick(event) {
+        if (event.target === overlay) {
+            finalizeClose();
+        }
+    }
+
+    imageEl.addEventListener('dragstart', function (event) {
+        if (!event.dataTransfer) return;
+
+        event.dataTransfer.effectAllowed = 'copy';
+        event.dataTransfer.dropEffect = 'copy';
+        event.dataTransfer.setData('text/uri-list', imageUrl);
+        event.dataTransfer.setData('text/plain', imageUrl);
+        event.dataTransfer.setData('DownloadURL', `image/png:${filename}:${imageUrl}`);
+
+        if (dragBlobPng && event.dataTransfer.items && typeof event.dataTransfer.items.add === 'function') {
+            try {
+                const dragFile = new File([dragBlobPng], filename, { type: 'image/png' });
+                event.dataTransfer.items.add(dragFile);
+            } catch (dragError) {
+                console.warn('Ajout de fichier au drag indisponible:', dragError);
+            }
+        }
+    });
+
+    closeBtn.addEventListener('click', finalizeClose);
+    overlay.addEventListener('click', handleOverlayClick);
+    saveBtn.addEventListener('click', handleSaveClick);
+    openPlatformBtn.addEventListener('click', handleOpenPlatformClick);
+    if (copyBtn) {
+        copyBtn.addEventListener('click', handleCopyClick);
+    }
+    document.addEventListener('keydown', handleEscape);
+
+    closeInstagramModal = finalizeClose;
+}
+
+/**
+ * Ouvre le modal desktop pour Snapchat
+ * @param {Object} options
+ */
+function openSnapchatDesktopShareModal(options = {}) {
+    openInstagramDesktopShareModal({
+        ...options,
+        modalTitle: 'Partager sur Snapchat',
+        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image. Étape 2 : Ouvrez Snapchat dans la popup, puis importez ou collez l'image.",
+        dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Snapchat Web.",
+        openButtonLabel: 'Ouvrir Snapchat',
+        openUrl: SNAPCHAT_WEB_URL,
+        openPopupName: 'snapchat-web-share',
+        openPopupWidth: 1100,
+        openPopupHeight: 820,
+        enableClipboard: true,
+        filename: options.filename || SNAPCHAT_DRAG_FILENAME
+    });
+}
+
+/**
+ * Ouvre le modal desktop pour TikTok
+ * @param {Object} options
+ */
+function openTiktokDesktopShareModal(options = {}) {
+    openInstagramDesktopShareModal({
+        ...options,
+        modalTitle: 'Partager sur TikTok',
+        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image. Étape 2 : Ouvrez TikTok dans la popup, puis importez l'image.",
+        dragHintText: "Vous pouvez aussi glisser-déposer l'image vers TikTok Web.",
+        openButtonLabel: 'Ouvrir TikTok',
+        openUrl: TIKTOK_WEB_URL,
+        openPopupName: 'tiktok-web-share',
+        openPopupWidth: 1100,
+        openPopupHeight: 820,
+        enableClipboard: true,
+        filename: options.filename || TIKTOK_DRAG_FILENAME
+    });
+}
+
+/**
+ * Ouvre le modal desktop pour Tumblr
+ * @param {Object} options
+ */
+function openTumblrDesktopShareModal(options = {}) {
+    openInstagramDesktopShareModal({
+        ...options,
+        modalTitle: 'Partager sur Tumblr',
+        modalInstructions: "Étape 1 : Copiez, sauvegardez ou glissez-déposez l'image. Étape 2 : Ouvrez Tumblr dans la popup, créez un post photo, puis importez l'image.",
+        dragHintText: "Vous pouvez aussi glisser-déposer l'image directement dans l'éditeur Tumblr.",
+        openButtonLabel: 'Ouvrir Tumblr',
+        openUrl: TUMBLR_WEB_URL,
+        openPopupName: 'tumblr-web-share',
+        openPopupWidth: 1100,
+        openPopupHeight: 820,
+        enableClipboard: true,
+        filename: options.filename || TUMBLR_DRAG_FILENAME
+    });
 }
 
 /**
@@ -277,20 +808,32 @@ async function generateShareImageBlob(mode) {
         fullText = `${resultText}\n(base + complémentaires).`;
     }
     
-    // Texte principal - PLUS GRAND pour remplir l'espace
-    ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
-    
-    // Gérer le retour à la ligne avec wrapText - texte dans la moitié supérieure
-    const lines = wrapText(ctx, fullText, canvas.width - 100);
-    const lineHeight = 70;
-    const textBlockHeight = lines.length * lineHeight;
-    // Positionner le texte pour remplir l'espace
-    const textStartY = 200;
-    
-    lines.forEach((line, index) => {
-        ctx.fillText(line, canvas.width / 2, textStartY + index * lineHeight);
+    // Mise en page : garantir que le texte reste au-dessus de l'icône
+    const textMaxWidth = canvas.width - 120;
+    const textTop = 155;
+    const iconSize = 320;
+    const iconY = 590;
+    const textBottom = iconY - 45;
+    const textMaxHeight = textBottom - textTop;
+
+    const fittedText = fitWrappedTextBlock(ctx, fullText, {
+        maxWidth: textMaxWidth,
+        maxHeight: textMaxHeight,
+        maxFontSize: 50,
+        minFontSize: 20,
+        lineHeightRatio: 1.25
     });
+
+    const centeredTextStartY = textTop + Math.max(0, (textMaxHeight - fittedText.totalHeight) / 2);
+
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `bold ${fittedText.fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+    ctx.textBaseline = 'top';
+
+    fittedText.lines.forEach((line, index) => {
+        ctx.fillText(line, canvas.width / 2, centeredTextStartY + index * fittedText.lineHeight);
+    });
+    ctx.textBaseline = 'alphabetic';
     
     // Ajouter l'icône dans la moitié inférieure
     return new Promise((resolve) => {
@@ -298,10 +841,8 @@ async function generateShareImageBlob(mode) {
         const iconImg = new Image();
         iconImg.crossOrigin = 'anonymous';
         iconImg.onload = function() {
-            // Dessiner l'icône plus haut et plus grand
-            const iconSize = 380;
+            // Dessiner l'icône dans la zone basse sans chevauchement du texte
             const iconX = (canvas.width - iconSize) / 2;
-            const iconY = 520; // Plus haut
             ctx.drawImage(iconImg, iconX, iconY, iconSize, iconSize);
             
             // URL en bas - PLUS GRAND et plus haut
@@ -328,6 +869,46 @@ async function generateShareImageBlob(mode) {
 }
 
 /**
+ * Ajuste automatiquement la taille de police pour faire tenir un bloc de texte
+ * dans une zone de largeur/hauteur donnée.
+ * @param {CanvasRenderingContext2D} ctx - Contexte canvas
+ * @param {string} text - Texte à afficher
+ * @param {Object} options - Paramètres de fitting
+ * @returns {{ lines: string[], fontSize: number, lineHeight: number, totalHeight: number }}
+ */
+function fitWrappedTextBlock(ctx, text, options) {
+    const maxWidth = options.maxWidth;
+    const maxHeight = options.maxHeight;
+    const maxFontSize = options.maxFontSize || 50;
+    const minFontSize = options.minFontSize || 20;
+    const lineHeightRatio = options.lineHeightRatio || 1.25;
+    const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+    for (let fontSize = maxFontSize; fontSize >= minFontSize; fontSize -= 2) {
+        ctx.font = `bold ${fontSize}px ${fontFamily}`;
+        const lines = wrapText(ctx, text, maxWidth);
+        const lineHeight = Math.round(fontSize * lineHeightRatio);
+        const totalHeight = lines.length * lineHeight;
+
+        if (totalHeight <= maxHeight) {
+            return { lines, fontSize, lineHeight, totalHeight };
+        }
+    }
+
+    // Filet de sécurité : taille minimale
+    ctx.font = `bold ${minFontSize}px ${fontFamily}`;
+    const fallbackLines = wrapText(ctx, text, maxWidth);
+    const fallbackLineHeight = Math.round(minFontSize * lineHeightRatio);
+
+    return {
+        lines: fallbackLines,
+        fontSize: minFontSize,
+        lineHeight: fallbackLineHeight,
+        totalHeight: fallbackLines.length * fallbackLineHeight
+    };
+}
+
+/**
  * Fonction helper pour gérer le retour à la ligne du texte
  * @param {CanvasRenderingContext2D} ctx - Contexte canvas
  * @param {string} text - Texte à wraps
@@ -335,21 +916,34 @@ async function generateShareImageBlob(mode) {
  * @returns {string[]} Tableau de lignes
  */
 function wrapText(ctx, text, maxWidth) {
-    const words = text.split(' ');
     const lines = [];
-    let currentLine = words[0];
-    
-    for (let i = 1; i < words.length; i++) {
-        const word = words[i];
-        const width = ctx.measureText(currentLine + ' ' + word).width;
-        if (width < maxWidth) {
-            currentLine += ' ' + word;
-        } else {
-            lines.push(currentLine);
-            currentLine = word;
+    const paragraphs = String(text).split('\n');
+
+    paragraphs.forEach(paragraph => {
+        const words = paragraph.trim().split(/\s+/).filter(Boolean);
+
+        if (words.length === 0) {
+            lines.push('');
+            return;
         }
-    }
-    lines.push(currentLine);
+
+        let currentLine = words[0];
+
+        for (let i = 1; i < words.length; i++) {
+            const word = words[i];
+            const testLine = `${currentLine} ${word}`;
+            const width = ctx.measureText(testLine).width;
+            if (width <= maxWidth) {
+                currentLine = testLine;
+            } else {
+                lines.push(currentLine);
+                currentLine = word;
+            }
+        }
+
+        lines.push(currentLine);
+    });
+
     return lines;
 }
 
@@ -359,7 +953,7 @@ function wrapText(ctx, text, maxWidth) {
  */
 export function shareOnSocial(platform) {
     // Ces plateformes reçoivent l'URL via un paramètre séparé, donc on ne l'inclut pas dans le message
-    const platformsWithUrlParam = ['facebook', 'messenger'];
+    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr'];
     const platformsWithImageParam = ['pinterest'];
     const includeUrl = !platformsWithUrlParam.includes(platform);
     const includeImage = platformsWithImageParam.includes(platform);
@@ -375,6 +969,47 @@ export function shareOnSocial(platform) {
             break;
         case 'twitter':
             shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
+            break;
+        case 'threads':
+            shareUrl = `https://www.threads.net/intent/post?text=${encodeURIComponent(message || '')}`;
+            break;
+        case 'tumblr':
+            if (isDesktop()) {
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (!blob) {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
+                    }
+
+                    const previewUrl = URL.createObjectURL(blob);
+                    openTumblrDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: TUMBLR_DRAG_FILENAME,
+                        imageAlt: 'Image générée pour Tumblr',
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Erreur génération image Tumblr desktop:', err);
+                    showError("Impossible de préparer l'image pour Tumblr.");
+                });
+                return;
+            }
+
+            shareUrl = `https://www.tumblr.com/widgets/share/tool?canonicalUrl=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent('Jours de Retraite')}&caption=${encodeURIComponent(message || '')}`;
+            break;
+        case 'mastodon':
+            if (!isDesktop()) {
+                nativeShare(state.currentActiveMode);
+                return;
+            }
+            shareUrl = `https://mastodonshare.com/?text=${encodeURIComponent(message || '')}`;
+            break;
+        case 'reddit':
+            const redditTitle = message || "Découvrez l'équivalent temps de cotisations de retraite";
+            shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(redditTitle)}`;
             break;
         case 'bluesky':
             shareUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
@@ -392,26 +1027,8 @@ export function shareOnSocial(platform) {
             shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
             break;
         case 'instagram':
-            // Instagram : utiliser l'API Web Share sur mobile (même principe que Pinterest)
-            if (navigator.share && isMobile()) {
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (blob) {
-                        const file = new File([blob], 'jours-de-retraite.png', { type: 'image/png' });
-                        
-                        navigator.share({
-                            title: 'JOURS DE RETRAITE',
-                            text: message || 'Découvrez l\'équivalent temps de cotisations de retraite',
-                            files: [file]
-                        }).catch(err => {
-                            console.warn('Erreur Web Share Instagram:', err);
-                            showWarning("Partage Instagram non disponible. Essayez une autre méthode.");
-                        });
-                    }
-                });
-                return;
-            } else {
-                // Instagram web n'a pas d'API de partage directe
-                // Proposer de télécharger l'image
+            // Mobile : enregistrer l'image puis ouvrir la caméra Instagram
+            if (isMobile()) {
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
                     if (blob) {
                         const url = URL.createObjectURL(blob);
@@ -421,11 +1038,114 @@ export function shareOnSocial(platform) {
                         document.body.appendChild(link);
                         link.click();
                         document.body.removeChild(link);
-                        showSuccess("Image téléchargée ! Ouvrez Instagram et partagez cette image.");
+                        URL.revokeObjectURL(url);
+
+                        showSuccess("Image enregistrée. Instagram va s'ouvrir: créez un post, puis choisissez l'image générée dans votre galerie.");
+
+                        window.setTimeout(function () {
+                            openMobileAppWithFallback(
+                                INSTAGRAM_MOBILE_CAMERA_URL,
+                                INSTAGRAM_WEB_URL,
+                                1300
+                            );
+                        }, 450);
+                    } else {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
                     }
+                }).catch(err => {
+                    console.error('Erreur génération image Instagram mobile:', err);
+                    showError("Impossible de préparer l'image pour Instagram.");
                 });
                 return;
             }
+
+            // Desktop : modal intelligent (sauvegarde + drag & drop)
+            generateShareImageBlob(state.currentActiveMode).then(blob => {
+                if (!blob) {
+                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                    return;
+                }
+
+                const previewUrl = URL.createObjectURL(blob);
+                openInstagramDesktopShareModal({
+                    imageUrl: previewUrl,
+                    imageBlob: blob,
+                    filename: INSTAGRAM_DRAG_FILENAME,
+                    imageAlt: 'Image générée pour Instagram',
+                    modalTitle: 'Partager sur Instagram',
+                    modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram dans la popup, cliquez sur Créer (+), puis importez l'image.",
+                    dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Instagram Web.",
+                    openButtonLabel: 'Ouvrir Instagram',
+                    openUrl: INSTAGRAM_WEB_URL,
+                    openPopupName: 'instagram-web-share',
+                    openPopupWidth: 1100,
+                    openPopupHeight: 820,
+                    enableClipboard: false,
+                    onClose: function () {
+                        URL.revokeObjectURL(previewUrl);
+                    }
+                });
+            }).catch(err => {
+                console.error('Erreur génération image Instagram desktop:', err);
+                showError("Impossible de préparer l'image pour Instagram.");
+            });
+            return;
+        case 'snapchat':
+            if (isMobile()) {
+                // Mobile: lien simple pour laisser l'OS ouvrir l'application native si disponible
+                window.location.href = SNAPCHAT_MOBILE_URL;
+                return;
+            }
+
+            generateShareImageBlob(state.currentActiveMode).then(blob => {
+                if (!blob) {
+                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                    return;
+                }
+
+                const previewUrl = URL.createObjectURL(blob);
+                openSnapchatDesktopShareModal({
+                    imageUrl: previewUrl,
+                    imageBlob: blob,
+                    filename: SNAPCHAT_DRAG_FILENAME,
+                    imageAlt: 'Image générée pour Snapchat',
+                    onClose: function () {
+                        URL.revokeObjectURL(previewUrl);
+                    }
+                });
+            }).catch(err => {
+                console.error('Erreur génération image Snapchat desktop:', err);
+                showError("Impossible de préparer l'image pour Snapchat.");
+            });
+            return;
+        case 'tiktok':
+            if (isMobile()) {
+                // Mobile: lien simple pour laisser l'OS ouvrir l'application native si disponible
+                window.location.href = TIKTOK_MOBILE_URL;
+                return;
+            }
+
+            generateShareImageBlob(state.currentActiveMode).then(blob => {
+                if (!blob) {
+                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                    return;
+                }
+
+                const previewUrl = URL.createObjectURL(blob);
+                openTiktokDesktopShareModal({
+                    imageUrl: previewUrl,
+                    imageBlob: blob,
+                    filename: TIKTOK_DRAG_FILENAME,
+                    imageAlt: 'Image générée pour TikTok',
+                    onClose: function () {
+                        URL.revokeObjectURL(previewUrl);
+                    }
+                });
+            }).catch(err => {
+                console.error('Erreur génération image TikTok desktop:', err);
+                showError("Impossible de préparer l'image pour TikTok.");
+            });
+            return;
         case 'pinterest':
             // Pour Pinterest : utiliser l'API Web Share si disponible (mobile)
             // Sinon, ouvrir Pinterest avec l'image statique
@@ -456,14 +1176,32 @@ export function shareOnSocial(platform) {
             }
             return;
         case 'messenger':
-            shareUrl = `fb-messenger://share?link=${encodeURIComponent(currentUrl)}`;
+            if (isDesktop()) {
+                const messengerText = getShareMessage(state.currentActiveMode, true) || currentUrl;
+
+                navigator.clipboard.writeText(messengerText).then(() => {
+                    showSuccess("Lien copié. Collez-le dans Messenger.");
+                }).catch(err => {
+                    console.warn("Copie Messenger desktop indisponible:", err);
+                    showWarning("Ouvrez Messenger puis collez le lien manuellement.");
+                });
+
+                openShareUrlWithDeviceStrategy('https://www.messenger.com/', 'messenger-share');
+                return;
+            }
+
+            // Mobile: deep link Messenger (laisse l'OS ouvrir l'application native)
+            shareUrl = `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`;
             break;
         default:
             shareUrl = null;
     }
 
     if (shareUrl) {
-        window.open(shareUrl, '_blank');
+        openShareUrlWithDeviceStrategy(
+            shareUrl,
+            `${platform || 'social'}-share`
+        );
         return;
     }
 
@@ -520,7 +1258,9 @@ export function shareVia(method) {
 }
 
 /**
- * Détecte la capacité SMS et Messenger, cache les boutons sur desktop
+ * Détecte les capacités par appareil:
+ * - desktop: cache le bouton SMS
+ * - mobile: cache le bouton Mastodon (desktop only)
  */
 export function checkSMSCapability() {
     if (!isMobile()) {
@@ -528,12 +1268,13 @@ export function checkSMSCapability() {
         smsButtons.forEach(btn => {
             btn.style.display = 'none';
         });
-        
-        const messengerButtons = document.querySelectorAll('button[data-platform="messenger"]');
-        messengerButtons.forEach(btn => {
-            btn.style.display = 'none';
-        });
+        return;
     }
+
+    const mastodonButtons = document.querySelectorAll('button[data-platform="mastodon"]');
+    mastodonButtons.forEach(btn => {
+        btn.style.display = 'none';
+    });
 }
 
 /**
@@ -559,7 +1300,6 @@ export function nativeShare(mode = 'temporal') {
         return;
     }
 
-    const shareTitle = "Incroyable perspective sur les retraites en France!";
     const platform = detectPlatform();
 
     // Sur Windows et Linux : utiliser la popup de copie avec URL incluse
@@ -573,7 +1313,6 @@ export function nativeShare(mode = 'temporal') {
     const messageWithoutUrl = getShareMessage(mode, false);
     if (navigator.share) {
         navigator.share({
-            title: shareTitle,
             text: messageWithoutUrl,
             url: SHARE_URL
         }).catch(error => {
@@ -762,7 +1501,7 @@ function showShareHelperPopup(text) {
  */
 function openPinterestFallback(currentUrl, message) {
     const pinterestUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(currentUrl)}&description=${encodeURIComponent(message || 'Découvrez l\'équivalent temps de cotisations de retraite')}&media=${encodeURIComponent('https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png')}`;
-    window.open(pinterestUrl, '_blank');
+    openShareUrlWithDeviceStrategy(pinterestUrl, 'pinterest-share');
 }
 
 /**

@@ -390,15 +390,27 @@ export function setRandomExample() {
             }
             
             const availableWidth = DOM.currentExample.clientWidth - __marqueePaddingCache.left - __marqueePaddingCache.right;
-            const scrollWidth = marqueeContent.scrollWidth;
+            if (availableWidth <= 0) return;
 
-            const overflow = scrollWidth - availableWidth;
-            if (overflow > 15) {
+            // Mesure robuste (entier + subpixel) pour éviter les faux positifs de débordement
+            const measuredScrollWidth = marqueeContent.scrollWidth;
+            const preciseContentWidth = marqueeContent.getBoundingClientRect().width;
+            const contentWidth = Math.max(measuredScrollWidth, preciseContentWidth);
+            const overflow = contentWidth - availableWidth;
+
+            // Tolérance adaptative : évite de lancer le carrousel pour les dépassements minimes
+            const minimumOverflowPx = Math.max(14, Math.min(26, availableWidth * 0.06));
+
+            if (overflow > minimumOverflowPx) {
                 DOM.currentExample.classList.add('scrolling');
-                const scrollDistance = -(overflow + 10);
+                const scrollDistance = -(Math.ceil(overflow) + 10);
                 DOM.currentExample.style.setProperty('--scroll-distance', `${scrollDistance}px`);
-                const baseDuration = Math.max(4, (scrollWidth - availableWidth) / 25);
+                const baseDuration = Math.max(4, overflow / 22);
                 marqueeContent.style.animationDuration = `${baseDuration}s`;
+            } else {
+                DOM.currentExample.classList.remove('scrolling');
+                DOM.currentExample.style.removeProperty('--scroll-distance');
+                marqueeContent.style.removeProperty('animation-duration');
             }
         });
     } else {
