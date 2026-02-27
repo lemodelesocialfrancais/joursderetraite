@@ -9,8 +9,10 @@
     <link rel="preload" href="style.css" as="style" fetchpriority="high">
     <meta name="description"
         content="Combien de temps représente un montant en années, mois, jours de retraites versées en France ?">
-    <meta name="color-scheme" content="dark">
+    <meta name="color-scheme" content="only light">
     <meta name="theme-color" content="#0a192f">
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#0a192f">
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0a192f">
     <title>Jours de Retraite</title>
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <style>
@@ -21,7 +23,7 @@
         
         /* Variables critiques */
         :root {
-            color-scheme: dark;
+            color-scheme: only light;
             --navy-900: #0a192f;
             --navy-800: #112240;
             --gold-500: #d4af37;
@@ -90,7 +92,7 @@
     <meta property="og:title" content="Jours de Retraite">
     <meta property="og:description"
         content="Découvrez l'équivalent temps de cotisations de retraite pour n'importe quel montant.">
-    <meta property="og:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png">
+    <meta property="og:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-maskable-512x512.png">
     <meta property="og:image:width" content="512">
     <meta property="og:image:height" content="512">
     <meta property="og:image:alt" content="Icône de l'application Jours de Retraite">
@@ -103,7 +105,7 @@
     <meta name="twitter:title" content="Jours de Retraite">
     <meta name="twitter:description"
         content="Découvrez l'équivalent temps de cotisations de retraite pour n'importe quel montant.">
-    <meta name="twitter:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png">
+    <meta name="twitter:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-maskable-512x512.png">
     <meta name="twitter:image:alt" content="Icône de l'application Jours de Retraite">
 
     <!-- Styles -->
@@ -141,6 +143,18 @@
             <button class="share-btn twitter" data-platform="twitter" title="X">
                 <svg width="16" height="16"><use href="icons.svg#icon-twitter"/></svg>
             </button>
+            <button class="share-btn threads" data-platform="threads" title="Threads">
+                <svg width="16" height="16"><use href="icons.svg#icon-threads"/></svg>
+            </button>
+            <button class="share-btn tumblr" data-platform="tumblr" title="Tumblr">
+                <svg width="16" height="16"><use href="icons.svg#icon-tumblr"/></svg>
+            </button>
+            <button class="share-btn mastodon" data-platform="mastodon" title="Mastodon">
+                <svg width="16" height="16"><use href="icons.svg#icon-mastodon"/></svg>
+            </button>
+            <button class="share-btn reddit" data-platform="reddit" title="Reddit">
+                <svg width="16" height="16"><use href="icons.svg#icon-reddit"/></svg>
+            </button>
             <button class="share-btn whatsapp" data-platform="whatsapp" title="WhatsApp">
                 <svg width="16" height="16"><use href="icons.svg#icon-whatsapp"/></svg>
             </button>
@@ -155,6 +169,12 @@
             </button>
             <button class="share-btn instagram" data-platform="instagram" title="Instagram">
                 <svg width="16" height="16"><use href="icons.svg#icon-instagram"/></svg>
+            </button>
+            <button class="share-btn snapchat" data-platform="snapchat" title="Snapchat">
+                <svg width="16" height="16"><use href="icons.svg#icon-snapchat"/></svg>
+            </button>
+            <button class="share-btn tiktok" data-platform="tiktok" title="TikTok">
+                <svg width="16" height="16"><use href="icons.svg#icon-tiktok"/></svg>
             </button>
             <button class="share-btn linkedin" data-platform="linkedin" title="LinkedIn">
                 <svg width="16" height="16"><use href="icons.svg#icon-linkedin"/></svg>

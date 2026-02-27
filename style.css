@@ -6,7 +6,7 @@
     1. VARIABLES CSS
     ============================================ */
 :root {
-    color-scheme: light;
+    color-scheme: only light;
     color-adjust: exact;
     forced-color-adjust: none;
     /* Couleurs principales - Palette Navy & Gold */
@@ -1236,6 +1236,75 @@ body {
         min-height: 40px;
         min-width: 40px;
     }
+
+    /* Neutralise les :hover "collants" sur mobile (sticky hover) */
+    .btn-primary:hover {
+        background: var(--gold-500) !important;
+        box-shadow: var(--shadow-gold), 0 0 20px rgba(212, 175, 55, 0.3);
+    }
+
+    .btn-secondary:hover {
+        background: var(--gradient-card);
+        color: var(--gray-300);
+        border-color: rgba(255, 255, 255, 0.08);
+        box-shadow: none;
+    }
+
+    .mode-toggle-btn:hover:not(.active) {
+        color: var(--gray-400);
+        transform: none;
+    }
+
+    .share-btn:hover {
+        border-color: rgba(255, 255, 255, 0.15);
+        color: var(--gray-400);
+        background: rgba(255, 255, 255, 0.05);
+        transform: none;
+    }
+
+    .share-btn.native:hover {
+        box-shadow: none;
+        transform: none;
+    }
+
+    .copy-btn:hover {
+        background: rgba(212, 175, 55, 0.15);
+        border-color: rgba(212, 175, 55, 0.3);
+        transform: none;
+    }
+
+    .example-btn:hover {
+        background-color: rgba(212, 175, 55, 0.05) !important;
+        color: #d4af37 !important;
+        box-shadow: none;
+    }
+
+    .snackbar-btn:hover {
+        box-shadow: none;
+        transform: none;
+    }
+
+    .fallback-close:hover {
+        background: rgba(255, 107, 107, 0.2);
+        transform: none;
+    }
+
+    .instagram-share-copy-btn:hover,
+    .instagram-share-save-btn:hover,
+    .instagram-share-open-btn:hover,
+    .instagram-share-close:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    button:focus-visible {
+        outline: none;
+    }
+
+    /* Feedback tap léger: s'éteint automatiquement via JS */
+    .mobile-tap-glow {
+        box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.35), 0 0 12px rgba(212, 175, 55, 0.28) !important;
+    }
 }
 
 :focus-visible {
@@ -1284,8 +1353,8 @@ select.input-field option {
     ============================================ */
 .copy-btn {
     position: absolute;
-    top: 0.35rem;
-    right: 0.45rem;
+    top: calc(0.35rem - 1px);
+    right: calc(0.45rem - 1px);
     background: rgba(212, 175, 55, 0.15);
     border: 1px solid rgba(212, 175, 55, 0.3);
     color: var(--gold-400);
@@ -1295,9 +1364,9 @@ select.input-field option {
     cursor: pointer;
     transition: all var(--transition-base);
     z-index: 1;
-    padding: 0.35rem 0.45rem;
-    min-width: 31px;
-    min-height: 27px;
+    padding: 5px 7px;
+    min-width: 30px;
+    min-height: 26px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1454,6 +1523,179 @@ select.input-field option {
 }
 
 /* All social buttons now use the same gold hover effect from the base .share-btn:hover */
+
+/* ============================================
+    20b. INSTAGRAM DESKTOP SHARE MODAL
+    ============================================ */
+.instagram-share-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 25, 47, 0.78);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 10020;
+}
+
+.instagram-share-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: min(560px, calc(100vw - 2rem));
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+    background: linear-gradient(145deg, rgba(17, 34, 64, 0.98) 0%, rgba(10, 25, 47, 0.98) 100%);
+    border: 1px solid rgba(212, 175, 55, 0.65);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg), 0 0 30px rgba(212, 175, 55, 0.22);
+    padding: 1.1rem;
+    z-index: 10021;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.instagram-share-header {
+    display: grid;
+    grid-template-columns: 32px 1fr 32px;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.instagram-share-close {
+    border: 0;
+    background: transparent;
+    color: var(--gray-300);
+    font-size: 1.75rem;
+    line-height: 1;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    min-width: 32px;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    grid-column: 3;
+    flex-shrink: 0;
+    transition: color var(--transition-fast), transform var(--transition-fast);
+}
+
+.instagram-share-close:hover {
+    color: var(--gold-400);
+}
+
+.instagram-share-title {
+    grid-column: 2;
+    color: var(--gold-300);
+    font-size: 1.15rem;
+    text-align: center;
+    margin: 0;
+}
+
+.instagram-share-instructions {
+    color: var(--gray-300);
+    text-align: center;
+    font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+.instagram-share-image-wrap {
+    min-height: 220px;
+    border: 1px dashed rgba(212, 175, 55, 0.5);
+    border-radius: var(--radius-md);
+    padding: 0.8rem;
+    background: rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.instagram-share-image {
+    max-width: 100%;
+    max-height: 340px;
+    border-radius: var(--radius-sm);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-drag: element;
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+}
+
+.instagram-share-image:active {
+    cursor: grabbing;
+}
+
+.instagram-share-drag-hint {
+    color: var(--gray-400);
+    text-align: center;
+    font-size: 0.82rem;
+}
+
+.instagram-share-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+}
+
+.instagram-share-copy-btn,
+.instagram-share-save-btn,
+.instagram-share-open-btn {
+    flex: 1;
+    min-width: 150px;
+    min-height: 42px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--gold-500);
+    text-align: center;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast), color var(--transition-fast);
+}
+
+.instagram-share-copy-btn {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--white);
+}
+
+.instagram-share-save-btn {
+    background: var(--gradient-gold);
+    color: var(--navy-900);
+}
+
+.instagram-share-copy-btn:disabled,
+.instagram-share-save-btn:disabled {
+    opacity: 0.85;
+    cursor: not-allowed;
+}
+
+.instagram-share-open-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--gold-300);
+    text-decoration: none;
+}
+
+@media (hover: hover) {
+    .instagram-share-copy-btn:hover,
+    .instagram-share-save-btn:hover,
+    .instagram-share-open-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-gold);
+    }
+
+    .instagram-share-close:hover {
+        transform: scale(1.06);
+    }
+}
+
+@media (max-width: 560px) {
+    .instagram-share-actions {
+        flex-direction: column;
+    }
+}
 
 /* Alignement bouton Comparer (Mode Financier) */
 
