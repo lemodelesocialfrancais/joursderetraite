@@ -10,6 +10,73 @@ import { initTheme } from './modules/theme.js';
 import { initPWA, promptInstall, dismissSnackbar } from './modules/pwa.js';
 import { initDOMCache, DOM } from './modules/dom-cache.js';
 
+const PWA_THEME_COLOR = '#0a192f';
+const MOBILE_TAP_GLOW_CLASS = 'mobile-tap-glow';
+const MOBILE_TAP_GLOW_DURATION_MS = 2200;
+
+function upsertThemeColorMeta(media) {
+    const selector = media
+        ? `meta[name="theme-color"][media="${media}"]`
+        : 'meta[name="theme-color"]:not([media])';
+    let meta = document.head.querySelector(selector);
+
+    if (!meta) {
+        meta = document.createElement('meta');
+        meta.setAttribute('name', 'theme-color');
+        if (media) {
+            meta.setAttribute('media', media);
+        }
+        document.head.appendChild(meta);
+    }
+
+    meta.setAttribute('content', PWA_THEME_COLOR);
+}
+
+function forcePwaThemeColor() {
+    upsertThemeColorMeta();
+    upsertThemeColorMeta('(prefers-color-scheme: light)');
+    upsertThemeColorMeta('(prefers-color-scheme: dark)');
+}
+
+function initMobileTapFeedback() {
+    if (!window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+        return;
+    }
+
+    const glowTimers = new WeakMap();
+
+    document.addEventListener('click', function (event) {
+        const button = event.target.closest('button');
+        if (!button || button.disabled) {
+            return;
+        }
+
+        const previousTimer = glowTimers.get(button);
+        if (previousTimer) {
+            window.clearTimeout(previousTimer);
+        }
+
+        button.classList.remove(MOBILE_TAP_GLOW_CLASS);
+        // Force un nouveau cycle visuel même en tap rapide
+        void button.offsetWidth;
+        button.classList.add(MOBILE_TAP_GLOW_CLASS);
+
+        const timerId = window.setTimeout(function () {
+            button.classList.remove(MOBILE_TAP_GLOW_CLASS);
+            glowTimers.delete(button);
+        }, MOBILE_TAP_GLOW_DURATION_MS);
+
+        glowTimers.set(button, timerId);
+
+        // Évite que le focus reste collé jusqu'au prochain tap
+        window.setTimeout(function () {
+            if (typeof button.blur === 'function') {
+                button.blur();
+            }
+        }, 40);
+    });
+}
+
 // Fallback pour les erreurs de chargement des modules
 // Cette fonction ne dépend d'aucun module externe
 function showFallbackError(message) {
@@ -131,6 +198,9 @@ function bindUIEventListeners() {
 
 // Initialisation au chargement du DOM
 document.addEventListener('DOMContentLoaded', function () {
+    forcePwaThemeColor();
+    initMobileTapFeedback();
+
     // Initialiser le cache DOM en premier (tous les autres modules en dépendent)
     initDOMCache();
 
@@ -241,6 +311,12 @@ document.addEventListener('DOMContentLoaded', function () {
             __deferredResolve();
         });
     }
+
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            forcePwaThemeColor();
+        }
+    });
 
     if ('requestIdleCallback' in window) {
         requestIdleCallback(loadDeferredModules, { timeout: 2000 });
