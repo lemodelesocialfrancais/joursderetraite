@@ -28,6 +28,39 @@ const TUMBLR_DRAG_FILENAME = 'jours-de-retraite-tumblr.png';
 let closeInstagramModal = null;
 
 /**
+ * Affiche une notification système native
+ * @param {string} title - Titre de la notification
+ * @param {string} body - Corps du message
+ */
+function showSystemNotification(title, body) {
+    if (!('Notification' in window)) {
+        return;
+    }
+
+    if (Notification.permission === 'granted') {
+        new Notification(title, {
+            body: body,
+            icon: '/icon-192x192.png',
+            badge: '/icon-192x192.png',
+            tag: 'share-notification',
+            requireInteraction: false
+        });
+    } else if (Notification.permission !== 'denied') {
+        Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+                new Notification(title, {
+                    body: body,
+                    icon: '/icon-192x192.png',
+                    badge: '/icon-192x192.png',
+                    tag: 'share-notification',
+                    requireInteraction: false
+                });
+            }
+        });
+    }
+}
+
+/**
  * Détecte si l'utilisateur est sur mobile
  * @returns {boolean}
  */
@@ -965,7 +998,14 @@ export function shareOnSocial(platform) {
     let shareUrl;
     switch (platform) {
         case 'facebook':
-            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(message)}`;
+            if (message) {
+                navigator.clipboard.writeText(message).then(() => {
+                    showSystemNotification('Texte copié !', 'Collez-le dans la fenêtre Facebook qui va s\'ouvrir.');
+                }).catch(err => {
+                    console.error('Erreur copie:', err);
+                });
+            }
+            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
             break;
         case 'twitter':
             shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
