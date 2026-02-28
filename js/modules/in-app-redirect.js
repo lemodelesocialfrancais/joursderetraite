@@ -1,7 +1,7 @@
 const IN_APP_BROWSERS = [
     { name: 'Facebook', pattern: /FBAN|FBAV|FB_IAB/i },
     { name: 'Instagram', pattern: /Instagram/i },
-    { name: 'Twitter', pattern: /Twitter/i },
+    { name: 'Twitter', pattern: /Twitter|TwitterAndroid/i },
     { name: 'TikTok', pattern: /TikTok/i },
     { name: 'LinkedIn', pattern: /LinkedIn/i },
     { name: 'Snapchat', pattern: /Snapchat/i },
@@ -81,6 +81,16 @@ function createFallbackButton() {
     });
 }
 
+function redirectViaIframe(url) {
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = url;
+    document.body.appendChild(iframe);
+    setTimeout(function() {
+        document.body.removeChild(iframe);
+    }, 5000);
+}
+
 function attemptRedirect() {
     const browserName = detectInAppBrowser();
     
@@ -107,17 +117,23 @@ function initInAppRedirect() {
     }
     
     const { browserName } = result;
+    const currentUrl = window.location.href;
     
     const redirectTimeout = setTimeout(function() {
         createFallbackButton();
-    }, 500);
+    }, 800);
     
     try {
-        window.location.href = window.location.href;
+        window.location.href = currentUrl;
     } catch(e) {
         clearTimeout(redirectTimeout);
+        redirectViaIframe(currentUrl);
         createFallbackButton();
     }
+    
+    setTimeout(function() {
+        redirectViaIframe(currentUrl);
+    }, 100);
 }
 
 export { initInAppRedirect };
