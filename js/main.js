@@ -4,7 +4,6 @@
  */
 
 // Imports des modules (critiques au lancement)
-import { initInAppRedirect } from './modules/in-app-redirect.js';
 import { formatNumberInput, allowOnlyNumbersAndComma, formatNumberOnBlur } from './modules/formatting.js';
 import { toggleMethodology, setRandomExample, resetForm, switchMode, updateObjectPrice, handleInput, initCustomDropdowns } from './modules/ui.js';
 import { initTheme } from './modules/theme.js';
@@ -199,9 +198,6 @@ function bindUIEventListeners() {
 
 // Initialisation au chargement du DOM
 document.addEventListener('DOMContentLoaded', function () {
-    // Détection et redirection depuis les navigateurs in-app (en premier)
-    initInAppRedirect();
-    
     forcePwaThemeColor();
     initMobileTapFeedback();
 
