@@ -742,7 +742,7 @@ function getShareMessage(mode, includeUrl = true) {
         // Si c'est un exemple, on utilise le label de l'exemple
         if (state.currentExampleLabel) {
             description = state.currentExampleLabel;
-            message = `${description} représentent ${resultText} de prestations retraites (base + complémenataires).`;
+            message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         } else {
             // Sinon c'est un montant personnalisé, on utilise le montant formaté
             const amountInput = document.getElementById('amount');
@@ -754,7 +754,7 @@ function getShareMessage(mode, includeUrl = true) {
                 maximumFractionDigits: 0
             }).format(amountValue);
             
-            message = `${description} représentent ${resultText} de prestations retraites (base + complémenataires).`;
+            message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         }
         
         message = message.charAt(0).toUpperCase() + message.slice(1);
@@ -996,10 +996,11 @@ export function shareOnSocial(platform) {
 
     // Génère l'URL de partage pour chaque plateforme au moment de l'appel
     let shareUrl;
+    const messageWithUrl = getShareMessage(state.currentActiveMode, true);
     switch (platform) {
         case 'facebook':
-            if (message) {
-                navigator.clipboard.writeText(message).then(() => {
+            if (messageWithUrl) {
+                navigator.clipboard.writeText(messageWithUrl).then(() => {
                     showSystemNotification('Texte copié !', 'Collez-le dans la fenêtre Facebook qui va s\'ouvrir.');
                 }).catch(err => {
                     console.error('Erreur copie:', err);
