@@ -1049,7 +1049,7 @@ export function shareOnSocial(platform) {
             shareUrl = `https://mastodonshare.com/?text=${encodeURIComponent(message || '')}`;
             break;
         case 'reddit':
-            const redditTitle = message || "Découvrez l'équivalent temps de cotisations de retraite";
+            const redditTitle = messageWithUrl || "Découvrez l'équivalent temps de cotisations de retraite";
             shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(redditTitle)}`;
             break;
         case 'bluesky':
