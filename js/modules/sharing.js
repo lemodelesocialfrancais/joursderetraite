@@ -1039,7 +1039,7 @@ export function shareOnSocial(platform) {
                 return;
             }
 
-            shareUrl = `https://www.tumblr.com/widgets/share/tool?canonicalUrl=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent('Jours de Retraite')}&caption=${encodeURIComponent(message || '')}`;
+            shareUrl = `https://www.tumblr.com/share/link?url=${encodeURIComponent(currentUrl)}&description=${encodeURIComponent(message || '')}`;
             break;
         case 'mastodon':
             if (!isDesktop()) {
