@@ -1022,7 +1022,7 @@ function wrapText(ctx, text, maxWidth) {
  */
 export function shareOnSocial(platform) {
     // Ces plateformes reçoivent l'URL via un paramètre séparé, donc on ne l'inclut pas dans le message
-    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr'];
+    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr', 'telegram'];
     const platformsWithImageParam = ['pinterest'];
     const includeUrl = !platformsWithUrlParam.includes(platform);
     const includeImage = platformsWithImageParam.includes(platform);
@@ -1101,7 +1101,7 @@ export function shareOnSocial(platform) {
             shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             break;
         case 'telegram':
-            shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+            shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
             break;
         case 'instagram':
             if (isMobile()) {
