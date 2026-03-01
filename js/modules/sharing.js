@@ -369,10 +369,19 @@ export function openInstagramDesktopShareModal(options = {}) {
     saveBtn.className = 'instagram-share-save-btn';
     saveBtn.textContent = "Sauvegarder l'image";
 
-    const openPlatformBtn = document.createElement('button');
-    openPlatformBtn.type = 'button';
+    const openPlatformBtn = document.createElement('a');
     openPlatformBtn.className = 'instagram-share-open-btn';
     openPlatformBtn.textContent = openButtonLabel;
+
+    if (onOpenPlatform) {
+        openPlatformBtn.href = '#';
+    } else {
+        openPlatformBtn.href = openUrl;
+        // Pour les deep links sur mobile, target="_blank" peut aider à éviter certains blocages
+        // tout en gardant notre site ouvert en arrière-plan.
+        openPlatformBtn.target = '_blank';
+        openPlatformBtn.rel = 'noopener noreferrer';
+    }
 
     let copyBtn = null;
     if (enableClipboard) {
@@ -442,10 +451,12 @@ export function openInstagramDesktopShareModal(options = {}) {
         }
     }
 
-    function handleOpenPlatformClick() {
+    function handleOpenPlatformClick(e) {
         if (onOpenPlatform) {
+            e.preventDefault();
             onOpenPlatform();
-        } else {
+        } else if (openPlatformBtn.href === '#' || !openPlatformBtn.href) {
+            e.preventDefault();
             openShareUrlWithDeviceStrategy(
                 openUrl,
                 openPopupName,
@@ -1107,13 +1118,7 @@ export function shareOnSocial(platform) {
                         modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir Instagram',
-                        onOpenPlatform: function () {
-                            // On essaie directement le deep link. 
-                            // Le fallback silencieux pose problème sur iOS/Android car le prompt 
-                            // "Ouvrir dans Instagram ?" fige la page et le timeout expire trop vite.
-                            // Si l'app n'est pas installée, l'OS affichera juste un avertissement.
-                            window.location.href = INSTAGRAM_MOBILE_CAMERA_URL;
-                        },
+                        openUrl: INSTAGRAM_MOBILE_CAMERA_URL,
                         openPopupName: 'instagram-share',
                         enableClipboard: false,
                         onClose: function () {
@@ -1205,11 +1210,7 @@ export function shareOnSocial(platform) {
                         modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir TikTok',
-                        onOpenPlatform: function () {
-                            // On essaie directement le deep link 
-                            // (comme pour Instagram, le fallback perturbe le prompt de l'OS)
-                            window.location.href = 'snssdk1233://camera';
-                        },
+                        openUrl: 'snssdk1233://camera',
                         openPopupName: 'tiktok-share',
                         enableClipboard: false,
                         onClose: function () {
