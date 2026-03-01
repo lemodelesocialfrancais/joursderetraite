@@ -1108,11 +1108,11 @@ export function shareOnSocial(platform) {
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir Instagram',
                         onOpenPlatform: function () {
-                            openMobileAppWithFallback(
-                                INSTAGRAM_MOBILE_CAMERA_URL,
-                                INSTAGRAM_WEB_URL,
-                                1300
-                            );
+                            // On essaie directement le deep link. 
+                            // Le fallback silencieux pose problème sur iOS/Android car le prompt 
+                            // "Ouvrir dans Instagram ?" fige la page et le timeout expire trop vite.
+                            // Si l'app n'est pas installée, l'OS affichera juste un avertissement.
+                            window.location.href = INSTAGRAM_MOBILE_CAMERA_URL;
                         },
                         openPopupName: 'instagram-share',
                         enableClipboard: false,
@@ -1206,11 +1206,9 @@ export function shareOnSocial(platform) {
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir TikTok',
                         onOpenPlatform: function () {
-                            openMobileAppWithFallback(
-                                'snssdk1233://camera',
-                                TIKTOK_WEB_URL,
-                                1300
-                            );
+                            // On essaie directement le deep link 
+                            // (comme pour Instagram, le fallback perturbe le prompt de l'OS)
+                            window.location.href = 'snssdk1233://camera';
                         },
                         openPopupName: 'tiktok-share',
                         enableClipboard: false,
