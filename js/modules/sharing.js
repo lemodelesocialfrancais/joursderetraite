@@ -301,7 +301,7 @@ export function openInstagramDesktopShareModal(options = {}) {
     const openPopupName = options.openPopupName || 'instagram-web-share';
     const openPopupWidth = Number(options.openPopupWidth) || 1100;
     const openPopupHeight = Number(options.openPopupHeight) || 820;
-    const enableClipboard = options.enableClipboard === true;
+    const enableClipboard = options.enableClipboard; // On préserve la valeur (booléen ou chaîne de caractères)
 
     const modalTitle = options.modalTitle || 'Partager sur Instagram';
     const modalInstructions = options.modalInstructions || "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, cliquez sur Créer (+), puis importez l'image enregistrée.";
