@@ -377,10 +377,11 @@ export function openInstagramDesktopShareModal(options = {}) {
         openPlatformBtn.href = '#';
     } else {
         openPlatformBtn.href = openUrl;
-        // Pour les liens Web classiques, target="_blank" est souhaitable.
-        // Pour les deep links (instagram://, etc.), il faut éviter target="_blank" 
-        // car certains navigateurs mobiles ouvrent alors un onglet vide au lieu de l'app.
-        if (openUrl && (openUrl.startsWith('http') || openUrl.startsWith('https'))) {
+        // Pour les liens Web classiques sur Desktop, target="_blank" est souhaitable.
+        // Sur Mobile, on évite target="_blank" pour TOUS les liens (y compris http)
+        // car cela permet à l'OS d'intercepter les Universal Links (Instagram, etc.) 
+        // ou les Deep Links (TikTok) sans ouvrir d'onglet vide fantôme.
+        if (!isMobile() && openUrl && (openUrl.startsWith('http') || openUrl.startsWith('https'))) {
             openPlatformBtn.target = '_blank';
             openPlatformBtn.rel = 'noopener noreferrer';
         }
@@ -1121,7 +1122,7 @@ export function shareOnSocial(platform) {
                         modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir Instagram',
-                        openUrl: INSTAGRAM_MOBILE_CAMERA_URL,
+                        openUrl: INSTAGRAM_WEB_URL,
                         openPopupName: 'instagram-share',
                         enableClipboard: false,
                         onClose: function () {
