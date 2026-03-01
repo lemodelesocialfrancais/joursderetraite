@@ -28,6 +28,19 @@ const TUMBLR_DRAG_FILENAME = 'jours-de-retraite-tumblr.png';
 let closeInstagramModal = null;
 
 /**
+ * Génère un nom de fichier unique avec horodatage
+ * @param {string} baseName - Nom de base (ex: 'jours-de-retraite-tiktok')
+ * @param {string} extension - Extension (ex: 'png')
+ * @returns {string} Nom unique (ex: 'jours-de-retraite-tiktok-20260301-1248.png')
+ */
+function generateUniqueFilename(baseName, extension) {
+    const now = new Date();
+    const pad = (n) => String(n).padStart(2, '0');
+    const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}`;
+    return `${baseName}-${stamp}.${extension}`;
+}
+
+/**
  * Affiche une notification système native
  * @param {string} title - Titre de la notification
  * @param {string} body - Corps du message
@@ -374,7 +387,9 @@ export function openInstagramDesktopShareModal(options = {}) {
     modal.appendChild(header);
     modal.appendChild(instructions);
     modal.appendChild(imageWrap);
-    modal.appendChild(dragHint);
+    if (dragHintText) {
+        modal.appendChild(dragHint);
+    }
     modal.appendChild(actions);
 
     document.body.appendChild(overlay);
@@ -1074,7 +1089,7 @@ export function shareOnSocial(platform) {
                     if (blob) {
                         const url = URL.createObjectURL(blob);
                         const link = document.createElement('a');
-                        link.download = 'jours-de-retraite-instagram.png';
+                        link.download = generateUniqueFilename('jours-de-retraite-instagram', 'png');
                         link.href = url;
                         document.body.appendChild(link);
                         link.click();
@@ -1161,30 +1176,30 @@ export function shareOnSocial(platform) {
             return;
         case 'tiktok':
             if (isMobile()) {
-                // Mobile : enregistrer l'image puis ouvrir TikTok
+                // Mobile : modal guidé étape par étape
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = 'jours-de-retraite-tiktok.png';
-                        link.href = url;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
-
-                        showSuccess("Image enregistrée. TikTok va s'ouvrir : appuyez sur +, puis importez l'image depuis votre galerie.");
-
-                        window.setTimeout(function () {
-                            openMobileAppWithFallback(
-                                'snssdk1233://camera',
-                                TIKTOK_WEB_URL,
-                                1300
-                            );
-                        }, 450);
-                    } else {
+                    if (!blob) {
                         showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
                     }
+
+                    const previewUrl = URL.createObjectURL(blob);
+                    openInstagramDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: generateUniqueFilename('jours-de-retraite-tiktok', 'png'),
+                        imageAlt: 'Image générée pour TikTok',
+                        modalTitle: 'Partager sur TikTok',
+                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
+                        dragHintText: '',
+                        openButtonLabel: 'Ouvrir TikTok',
+                        openUrl: TIKTOK_MOBILE_URL,
+                        openPopupName: 'tiktok-share',
+                        enableClipboard: false,
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
                 }).catch(err => {
                     console.error('Erreur génération image TikTok mobile:', err);
                     showError("Impossible de préparer l'image pour TikTok.");
