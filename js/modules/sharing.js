@@ -342,77 +342,153 @@ export function openInstagramDesktopShareModal(options = {}) {
     header.appendChild(title);
     header.appendChild(closeBtn);
 
-    const instructions = document.createElement('p');
-    instructions.className = 'instagram-share-instructions';
-    instructions.textContent = modalInstructions;
+    const modalBody = document.createElement('div');
+    modalBody.className = 'instagram-share-body';
+    modal.appendChild(header);
+    modal.appendChild(modalBody);
 
-    const imageWrap = document.createElement('div');
-    imageWrap.className = 'instagram-share-image-wrap';
+    const contentWrapper = document.createElement('div');
+    contentWrapper.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        margin-bottom: 2rem;
+    `;
+    modalBody.appendChild(contentWrapper);
 
-    const imageEl = document.createElement('img');
-    imageEl.className = 'instagram-share-image';
-    imageEl.src = imageUrl;
-    imageEl.alt = imageAlt;
-    imageEl.draggable = true;
-    imageEl.setAttribute('draggable', 'true');
-    imageWrap.appendChild(imageEl);
+    // Instructions
+    if (modalInstructions) {
+        const instructions = document.createElement('p');
+        instructions.className = 'instagram-share-instructions';
+        instructions.textContent = modalInstructions;
+        contentWrapper.appendChild(instructions);
+    }
 
-    const dragHint = document.createElement('p');
-    dragHint.className = 'instagram-share-drag-hint';
-    dragHint.textContent = dragHintText;
+    // Image (Conditionnelle)
+    if (imageUrl) {
+        const imgWrapper = document.createElement('div');
+        imgWrapper.style.cssText = `
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            background: #0d1b31;
+            margin-bottom: 1.5rem;
+        `;
+        contentWrapper.appendChild(imgWrapper);
+
+        const img = document.createElement('img');
+        img.src = imageUrl;
+        img.alt = imageAlt;
+        img.style.cssText = 'width: 100%; height: auto; display: block;';
+        imgWrapper.appendChild(img);
+
+        if (!isMobile() && dragHintText) {
+            const dragHint = document.createElement('div');
+            dragHint.className = 'instagram-share-drag-hint';
+            dragHint.textContent = dragHintText;
+            imgWrapper.appendChild(dragHint);
+
+            img.draggable = true;
+            img.addEventListener('dragstart', (e) => {
+                if (!e.dataTransfer) return;
+                e.dataTransfer.effectAllowed = 'copy';
+                e.dataTransfer.setData('DownloadURL', `image/png:${filename}:${imageUrl}`);
+                if (imageBlob && e.dataTransfer.items) {
+                    try {
+                        const dragFile = new File([imageBlob], filename, { type: 'image/png' });
+                        e.dataTransfer.items.add(dragFile);
+                    } catch (err) { }
+                }
+            });
+        }
+    }
+
+    // Affichage du texte si c'est un partage de texte (ex: LinkedIn)
+    let textToCopy = '';
+    if (typeof enableClipboard === 'string') {
+        textToCopy = enableClipboard;
+        const textDisplay = document.createElement('div');
+        textDisplay.style.cssText = `
+            width: 100%;
+            max-width: 320px;
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            max-height: 120px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-style: italic;
+        `;
+        textDisplay.textContent = textToCopy;
+        contentWrapper.appendChild(textDisplay);
+    }
 
     const actions = document.createElement('div');
-    actions.className = 'instagram-share-actions';
+    actions.style.cssText = `
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+        max-width: 320px;
+    `;
+    modalBody.appendChild(actions);
 
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'instagram-share-save-btn';
-    saveBtn.textContent = "Sauvegarder l'image";
+    // Bouton de sauvegarde (uniquement si image)
+    let saveBtn = null;
+    if (imageUrl) {
+        saveBtn = document.createElement('button');
+        saveBtn.className = 'instagram-share-action-btn instagram-share-save-btn';
+        saveBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            <span>Sauvegarder l'image</span>
+        `;
+        saveBtn.onclick = handleSaveClick;
+        actions.appendChild(saveBtn);
+    }
+
+    // Bouton de copie (image ou texte)
+    let copyBtn = null;
+    if (enableClipboard) {
+        copyBtn = document.createElement('button');
+        copyBtn.className = 'instagram-share-action-btn instagram-share-copy-btn';
+        const isTextCopy = typeof enableClipboard === 'string';
+        copyBtn.innerHTML = `
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+            <span>${isTextCopy ? "Copier le texte" : "Copier l'image"}</span>
+        `;
+        copyBtn.onclick = handleCopyClick;
+        actions.appendChild(copyBtn);
+    }
 
     const openPlatformBtn = document.createElement('a');
-    openPlatformBtn.className = 'instagram-share-open-btn';
+    openPlatformBtn.className = 'instagram-share-action-btn instagram-share-open-btn';
     openPlatformBtn.textContent = openButtonLabel;
 
     if (onOpenPlatform) {
         openPlatformBtn.href = '#';
     } else {
         openPlatformBtn.href = openUrl;
-        // Pour les liens Web classiques sur Desktop, target="_blank" est souhaitable.
-        // Sur Mobile, on évite target="_blank" pour TOUS les liens (y compris http)
-        // car cela permet à l'OS d'intercepter les Universal Links (Instagram, etc.) 
-        // ou les Deep Links (TikTok) sans ouvrir d'onglet vide fantôme.
-        if (!isMobile() && openUrl && (openUrl.startsWith('http') || openUrl.startsWith('https'))) {
+        if (!isMobile() && openUrl && (openUrl.startsWith('http'))) {
             openPlatformBtn.target = '_blank';
             openPlatformBtn.rel = 'noopener noreferrer';
         }
     }
-
-    let copyBtn = null;
-    if (enableClipboard) {
-        copyBtn = document.createElement('button');
-        copyBtn.type = 'button';
-        copyBtn.className = 'instagram-share-copy-btn';
-        copyBtn.textContent = "Copier l'image";
-        actions.appendChild(copyBtn);
-    }
-
-    actions.appendChild(saveBtn);
+    openPlatformBtn.onclick = handleOpenPlatformClick;
     actions.appendChild(openPlatformBtn);
-
-    modal.appendChild(header);
-    modal.appendChild(instructions);
-    modal.appendChild(imageWrap);
-    if (dragHintText) {
-        modal.appendChild(dragHint);
-    }
-    modal.appendChild(actions);
 
     document.body.appendChild(overlay);
     document.body.appendChild(modal);
 
     let modalClosed = false;
     let copyInProgress = false;
-    const dragBlobPng = imageBlob;
 
     function finalizeClose() {
         if (modalClosed) return;
@@ -420,11 +496,6 @@ export function openInstagramDesktopShareModal(options = {}) {
         document.removeEventListener('keydown', handleEscape);
         overlay.removeEventListener('click', handleOverlayClick);
         closeBtn.removeEventListener('click', finalizeClose);
-        saveBtn.removeEventListener('click', handleSaveClick);
-        openPlatformBtn.removeEventListener('click', handleOpenPlatformClick);
-        if (copyBtn) {
-            copyBtn.removeEventListener('click', handleCopyClick);
-        }
 
         overlay.remove();
         modal.remove();
@@ -487,25 +558,29 @@ export function openInstagramDesktopShareModal(options = {}) {
     async function handleCopyClick() {
         if (!copyBtn || modalClosed || copyInProgress) return;
 
-        if (!supportsImageClipboard()) {
-            showWarning("Votre navigateur ne permet pas la copie d'image. Utilisez la sauvegarde ou le glisser-déposer.");
-            return;
-        }
+        const isTextCopy = typeof enableClipboard === 'string';
+        const defaultLabel = isTextCopy ? "Copier le texte" : "Copier l'image";
 
         copyInProgress = true;
-        const defaultLabel = "Copier l'image";
         copyBtn.disabled = true;
         copyBtn.textContent = 'Copie...';
 
         try {
-            const pngBlob = await resolvePngBlobForClipboard();
-            await navigator.clipboard.write([
-                new ClipboardItem({
-                    'image/png': pngBlob
-                })
-            ]);
+            if (isTextCopy) {
+                await navigator.clipboard.writeText(enableClipboard);
+                showSuccess("Texte copié dans le presse-papiers.");
+            } else {
+                if (!supportsImageClipboard()) {
+                    showWarning("Votre navigateur ne permet pas la copie d'image. Utilisez la sauvegarde.");
+                    return;
+                }
+                const pngBlob = await resolvePngBlobForClipboard();
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': pngBlob })
+                ]);
+                showSuccess("Image copiée dans le presse-papiers.");
+            }
 
-            showSuccess("Image copiée dans le presse-papiers.");
             copyBtn.textContent = 'Copiée !';
             setTimeout(function () {
                 if (!modalClosed && copyBtn) {
@@ -514,8 +589,8 @@ export function openInstagramDesktopShareModal(options = {}) {
                 }
             }, 1200);
         } catch (error) {
-            console.error('Erreur copie image:', error);
-            showError("Impossible de copier l'image automatiquement.");
+            console.error('Erreur copie:', error);
+            showError("Échec de la copie automatique.");
             if (!modalClosed) {
                 copyBtn.textContent = defaultLabel;
                 copyBtn.disabled = false;
@@ -526,14 +601,20 @@ export function openInstagramDesktopShareModal(options = {}) {
     }
 
     function handleEscape(event) {
-        if (event.key === 'Escape') {
-            finalizeClose();
-        }
+        if (event.key === 'Escape') finalizeClose();
     }
 
     function handleOverlayClick(event) {
-        if (event.target === overlay) {
-            finalizeClose();
+        if (event.target === overlay) finalizeClose();
+    }
+
+    function handleOpenPlatformClick(e) {
+        if (onOpenPlatform) {
+            e.preventDefault();
+            onOpenPlatform();
+        } else if (openPlatformBtn.getAttribute('href') === '#' || !openPlatformBtn.getAttribute('href')) {
+            e.preventDefault();
+            openShareUrlWithDeviceStrategy(openUrl, openPopupName, openPopupWidth, openPopupHeight);
         }
     }
 
@@ -1092,6 +1173,21 @@ export function shareOnSocial(platform) {
             shareUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
             break;
         case 'linkedin':
+            if (isMobile()) {
+                // Mobile : modal guidé (LinkedIn app ne supporte pas bien le texte via URL)
+                openInstagramDesktopShareModal({
+                    imageUrl: null, // Pas d'image pour LinkedIn par défaut
+                    modalTitle: 'Partager sur LinkedIn',
+                    modalInstructions: "Étape 1 : Copiez le texte. Étape 2 : Ouvrez LinkedIn et collez-le dans votre post.",
+                    openButtonLabel: 'Ouvrir LinkedIn',
+                    openUrl: 'https://www.linkedin.com/feed/',
+                    enableClipboard: message, // On passe le message à copier
+                    onClose: function () {
+                        // Nettoyage si besoin
+                    }
+                });
+                return;
+            }
             console.log('LinkedIn message:', message);
             const encodedMessage = encodeURIComponent(message);
             console.log('Encoded message:', encodedMessage);
