@@ -1101,7 +1101,7 @@ export function shareOnSocial(platform) {
             shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             break;
         case 'telegram':
-            shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
+            shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
             break;
         case 'instagram':
             if (isMobile()) {
