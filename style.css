@@ -403,17 +403,17 @@ body {
 
 .counter-digit span {
     display: inline-block;
-    animation: slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform: translate3d(0, 0, 0);
 }
 
 @keyframes slideUp {
     from {
-        transform: translateY(100%);
+        transform: translate3d(0, 100%, 0);
         opacity: 0;
     }
 
     to {
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
         opacity: 1;
     }
 }
@@ -2368,6 +2368,14 @@ select.input-field option {
     animation: titleShimmerPulse 2.8s ease-in-out infinite;
     will-change: opacity;
     pointer-events: none;
+}
+
+/* Nettoie les hints de compositing après les animations d'entrée */
+.fade-in.anim-complete,
+.fade-in-slide-up.anim-complete,
+.title-reveal-optimized.anim-complete,
+.header-boat.animate.anim-complete {
+    will-change: auto;
 }
 
 /* ============================================
