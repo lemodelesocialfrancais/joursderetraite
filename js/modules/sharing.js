@@ -800,9 +800,9 @@ function getShareMessage(mode, includeUrl = true) {
     }
 
     if (includeUrl) {
-        const displayUrl = currentUrl.replace(/^https?:\/\//, '');
-        // Assurer des sauts de ligne corrects pour LinkedIn
-        message += `\nÀ vous de tester sur :\n${displayUrl}`;
+        // On utilise l'URL complète avec https:// pour assurer que les plateformes 
+        // (ex: Telegram, LinkedIn) reconnaissent le lien et créent un aperçu automatique.
+        message += `\nÀ vous de tester sur :\n${currentUrl}`;
         console.log('Final message with URL:', message);
     }
 
@@ -1022,7 +1022,7 @@ function wrapText(ctx, text, maxWidth) {
  */
 export function shareOnSocial(platform) {
     // Ces plateformes reçoivent l'URL via un paramètre séparé, donc on ne l'inclut pas dans le message
-    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr', 'telegram'];
+    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr'];
     const platformsWithImageParam = ['pinterest'];
     const includeUrl = !platformsWithUrlParam.includes(platform);
     const includeImage = platformsWithImageParam.includes(platform);
@@ -1101,7 +1101,10 @@ export function shareOnSocial(platform) {
             shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             break;
         case 'telegram':
-            shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
+            // En n'utilisant QUE le paramètre 'text' (qui contient déjà l'URL complète à la fin),
+            // on évite que Telegram n'ajoute une deuxième fois le lien au début.
+            // Le lien complet avec https:// permet à Telegram de générer l'aperçu du site.
+            shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
             break;
         case 'instagram':
             if (isMobile()) {
