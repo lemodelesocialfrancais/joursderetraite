@@ -1178,8 +1178,34 @@ export function shareOnSocial(platform) {
             return;
         case 'snapchat':
             if (isMobile()) {
-                // Mobile: lien simple pour laisser l'OS ouvrir l'application native si disponible
-                window.location.href = SNAPCHAT_MOBILE_URL;
+                // Mobile : modal guidé étape par étape
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (!blob) {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
+                    }
+
+                    const previewUrl = URL.createObjectURL(blob);
+                    openInstagramDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: generateUniqueFilename('jours-de-retraite-snapchat', 'png'),
+                        imageAlt: 'Image générée pour Snapchat',
+                        modalTitle: 'Partager sur Snapchat',
+                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Snapchat, appuyez sur l'icône Galerie (Cartes), puis importez l'image.",
+                        dragHintText: '',
+                        openButtonLabel: 'Ouvrir Snapchat',
+                        openUrl: SNAPCHAT_MOBILE_URL,
+                        openPopupName: 'snapchat-share',
+                        enableClipboard: false,
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Erreur génération image Snapchat mobile:', err);
+                    showError("Impossible de préparer l'image pour Snapchat.");
+                });
                 return;
             }
 
