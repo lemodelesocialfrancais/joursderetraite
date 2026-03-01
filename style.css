@@ -552,7 +552,6 @@ body {
     height: calc(100% - 0.24rem);
     background: var(--gold-500);
     border-radius: var(--radius-full);
-    box-shadow: 0 4px 20px rgba(212, 175, 55, 0.3);
     transition: transform 0.5s cubic-bezier(0.25, 1.05, 0.5, 1.02);
     will-change: transform;
     z-index: 0;
