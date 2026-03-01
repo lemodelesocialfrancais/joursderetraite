@@ -22,8 +22,13 @@ const NBSP = '\u00A0';
 const FINANCIAL_HEADER_HTML = 'Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:';
 const FINANCIAL_SIMPLE_PREFIX = 'Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ';
 const FIELD_ERROR_DURATION_MS = 2000;
+const SLIDE_UP_ANIMATION = 'slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
+const SLIDE_UP_DURATION_MS = 500;
+const SLIDE_UP_STAGGER_MS = 100;
+const SLIDE_UP_CLEANUP_BUFFER_MS = 80;
 
 let __persistCalculationCountTimer = null;
+const __animationCleanupTimers = new WeakMap();
 
 function persistCalculationCount() {
     if (__persistCalculationCountTimer) {
@@ -124,19 +129,39 @@ function formatObjectCount(numberOfObjects) {
 export function triggerAnimation(element) {
     if (!element) return;
 
-    const digits = element.querySelectorAll('.counter-digit span');
-    
+    const digits = Array.from(element.querySelectorAll('.counter-digit span'));
+    if (digits.length === 0) return;
+
+    const previousCleanupTimer = __animationCleanupTimers.get(element);
+    if (previousCleanupTimer) {
+        clearTimeout(previousCleanupTimer);
+    }
+
     // Frame 1 : réinitialiser toutes les animations
     digits.forEach(digit => {
         digit.style.animation = 'none';
+        digit.style.willChange = 'transform, opacity';
     });
-    
-    // Frame 2 : réactiver les animations (laisse le navigateur gérer le timing)
+
+    // Frame 2+3 : réactiver les animations après commit du style "none"
     requestAnimationFrame(() => {
-        digits.forEach((digit, index) => {
-            digit.style.animation = `slideUp 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) ${index * 0.1}s backwards`;
+        requestAnimationFrame(() => {
+            digits.forEach((digit, index) => {
+                digit.style.animation = `${SLIDE_UP_ANIMATION} ${index * 0.1}s backwards`;
+            });
         });
     });
+
+    const longestAnimationMs = SLIDE_UP_DURATION_MS + ((digits.length - 1) * SLIDE_UP_STAGGER_MS);
+    const cleanupTimer = setTimeout(() => {
+        __animationCleanupTimers.delete(element);
+        const currentDigits = element.querySelectorAll('.counter-digit span');
+        currentDigits.forEach(digit => {
+            digit.style.willChange = 'auto';
+        });
+    }, longestAnimationMs + SLIDE_UP_CLEANUP_BUFFER_MS);
+
+    __animationCleanupTimers.set(element, cleanupTimer);
 }
 
 /**
