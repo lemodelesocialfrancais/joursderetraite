@@ -6,13 +6,28 @@
 // Imports des modules (critiques au lancement)
 import { formatNumberInput, allowOnlyNumbersAndComma, formatNumberOnBlur } from './modules/formatting.js';
 import { toggleMethodology, setRandomExample, resetForm, switchMode, updateObjectPrice, handleInput, initCustomDropdowns } from './modules/ui.js';
-import { initTheme } from './modules/theme.js';
 import { initPWA, promptInstall, dismissSnackbar } from './modules/pwa.js';
 import { initDOMCache, DOM } from './modules/dom-cache.js';
 
 const PWA_THEME_COLOR = '#0a192f';
 const MOBILE_TAP_GLOW_CLASS = 'mobile-tap-glow';
 const MOBILE_TAP_GLOW_DURATION_MS = 2200;
+const MOBILE_TAP_BLUR_DELAY_MS = 40;
+const CUSTOM_AMOUNT_OPTION = 'autre';
+const CUSTOM_PERIOD_OPTION = 'custom';
+const FINANCIAL_MODE = 'financial';
+const DEFERRED_PWA_IMAGE_DELAY_MS = 1500;
+const IDLE_CALLBACK_TIMEOUT_MS = 2000;
+const LOW_END_CPU_THRESHOLD = 4;
+const LOW_END_MEMORY_THRESHOLD = 4;
+const LOW_END_DEFERRED_MODULE_DELAY_MS = 500;
+const STANDARD_DEFERRED_MODULE_DELAY_MS = 200;
+
+function toggleCustomPeriodContainer(selectedValue) {
+    if (!DOM.customPeriodContainer) return;
+    const shouldShow = selectedValue === CUSTOM_PERIOD_OPTION;
+    DOM.customPeriodContainer.classList.toggle('hidden', !shouldShow);
+}
 
 function upsertThemeColorMeta(media) {
     const selector = media
@@ -73,7 +88,7 @@ function initMobileTapFeedback() {
             if (typeof button.blur === 'function') {
                 button.blur();
             }
-        }, 40);
+        }, MOBILE_TAP_BLUR_DELAY_MS);
     });
 }
 
@@ -103,6 +118,13 @@ const __deferredReady = new Promise(resolve => {
     __deferredResolve = resolve;
 });
 
+function resolveDeferredModulesReady() {
+    if (typeof __deferredResolve === 'function') {
+        __deferredResolve();
+        __deferredResolve = null;
+    }
+}
+
 // Placeholders async : attendent le chargement des modules sans polling
 window.calculate = async function () {
     await __deferredReady;
@@ -125,6 +147,16 @@ window.promptInstall = promptInstall;
 window.dismissSnackbar = dismissSnackbar;
 
 function bindUIEventListeners() {
+    const exampleBtn = document.getElementById('example-btn');
+    const calculateBtnTemporal = document.getElementById('calculate-btn-temporal');
+    const resetBtnTemporal = document.getElementById('reset-btn-temporal');
+    const compareBtnFinancial = document.getElementById('compare-btn-financial');
+    const methodologyHeader = document.getElementById('methodology-header');
+    const snackbarInstallBtn = document.getElementById('snackbar-install-btn');
+    const snackbarCloseBtn = document.getElementById('snackbar-close-btn');
+    const fallbackCloseBtn = document.getElementById('fallback-close-btn');
+    const fallbackMessage = document.getElementById('fallback-message');
+
     // Toggle de mode
     DOM.temporalModeBtn?.addEventListener('click', function () {
         switchMode('temporal');
@@ -144,16 +176,16 @@ function bindUIEventListeners() {
     });
 
     // Actions mode temporel
-    document.getElementById('example-btn')?.addEventListener('click', function () {
+    exampleBtn?.addEventListener('click', function () {
         setRandomExample();
     });
-    document.getElementById('calculate-btn-temporal')?.addEventListener('click', function () {
+    calculateBtnTemporal?.addEventListener('click', function () {
         if (DOM.amount) {
             formatNumberOnBlur(DOM.amount);
         }
         window.calculate();
     });
-    document.getElementById('reset-btn-temporal')?.addEventListener('click', function () {
+    resetBtnTemporal?.addEventListener('click', function () {
         resetForm();
     });
 
@@ -162,8 +194,8 @@ function bindUIEventListeners() {
         updateObjectPrice();
 
         const selectedValue = this.value;
-        const isCustomAmount = selectedValue === 'autre' || selectedValue === '';
-        const isFinancialModeActive = DOM.modesContainer?.getAttribute('data-active-mode') === 'financial';
+        const isCustomAmount = selectedValue === CUSTOM_AMOUNT_OPTION || selectedValue === '';
+        const isFinancialModeActive = DOM.modesContainer?.getAttribute('data-active-mode') === FINANCIAL_MODE;
 
         // Auto-calcul si un élément de la liste est choisi (hors "Montant personnalisé")
         if (isFinancialModeActive && !isCustomAmount) {
@@ -177,22 +209,22 @@ function bindUIEventListeners() {
     DOM.objectPriceInput?.addEventListener('blur', function () {
         formatNumberOnBlur(this);
     });
-    document.getElementById('compare-btn-financial')?.addEventListener('click', function () {
+    compareBtnFinancial?.addEventListener('click', function () {
         window.calculateComparison();
     });
 
     // Divers UI
-    document.getElementById('methodology-header')?.addEventListener('click', function () {
+    methodologyHeader?.addEventListener('click', function () {
         toggleMethodology();
     });
-    document.getElementById('snackbar-install-btn')?.addEventListener('click', function () {
+    snackbarInstallBtn?.addEventListener('click', function () {
         promptInstall();
     });
-    document.getElementById('snackbar-close-btn')?.addEventListener('click', function () {
+    snackbarCloseBtn?.addEventListener('click', function () {
         dismissSnackbar();
     });
-    document.getElementById('fallback-close-btn')?.addEventListener('click', function () {
-        document.getElementById('fallback-message')?.classList.add('hidden');
+    fallbackCloseBtn?.addEventListener('click', function () {
+        fallbackMessage?.classList.add('hidden');
     });
 }
 
@@ -207,22 +239,17 @@ document.addEventListener('DOMContentLoaded', function () {
     // Brancher les événements UI
     bindUIEventListeners();
     
-    // Initialiser le thème
-    initTheme();
-
     // Initialiser la PWA
     initPWA();
 
 
 
     // Détection des appareils peu puissants pour optimisations
-    (function detectLowPerfDevice() {
-        const isLowCPU = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
-        const isLowMemory = navigator.deviceMemory && navigator.deviceMemory < 4;
-        if (isLowCPU || isLowMemory) {
-            document.documentElement.classList.add('low-perf-device');
-        }
-    })();
+    const isLowCPU = navigator.hardwareConcurrency && navigator.hardwareConcurrency < LOW_END_CPU_THRESHOLD;
+    const isLowMemory = navigator.deviceMemory && navigator.deviceMemory < LOW_END_MEMORY_THRESHOLD;
+    if (isLowCPU || isLowMemory) {
+        document.documentElement.classList.add('low-perf-device');
+    }
 
     // Activer le mode temporel par défaut (critique pour l'affichage initial)
     switchMode('temporal');
@@ -230,11 +257,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Gestion de la période personnalisée (le dropdown financier est initialisé à la demande)
     if (DOM.timePeriodSelect && DOM.customPeriodContainer) {
         DOM.timePeriodSelect.addEventListener('change', function () {
-            if (this.value === 'custom') {
-                DOM.customPeriodContainer.classList.remove('hidden');
-            } else {
-                DOM.customPeriodContainer.classList.add('hidden');
-            }
+            toggleCustomPeriodContainer(this.value);
         });
     }
 
@@ -254,29 +277,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // Bateau : priorité max (preload + affichage dès que possible)
-    requestAnimationFrame(function showPriorityImages() {
-        document.querySelectorAll('img[data-src].pwa-priority-img').forEach(function (img) {
-            var url = img.getAttribute('data-src');
-            if (url) {
-                img.setAttribute('fetchpriority', 'high');
-                img.src = url;
-                img.removeAttribute('data-src');
-            }
-        });
-    });
-
-    // Autres images PWA : ~1,5 s après
-    setTimeout(function loadPwaImages() {
-        document.querySelectorAll('img[data-src].pwa-deferred-img').forEach(function (img) {
-            var url = img.getAttribute('data-src');
-            if (url) {
-                img.src = url;
-                img.removeAttribute('data-src');
-            }
-        });
-    }, 1500);
-
     // Charger les modules différés quand le navigateur est inactif
     // Utilise requestIdleCallback pour s'adapter à la puissance de l'appareil
     // Fallback setTimeout pour les anciens navigateurs
@@ -284,9 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
         Promise.all([
             import('./modules/calculator.js'),
             import('./modules/sharing.js')
-        ]).then(function (results) {
-            var calculator = results[0];
-            var sharing = results[1];
+        ]).then(function ([calculator, sharing]) {
 
             window.__calculate = calculator.calculate;
             window.__calculateComparison = calculator.calculateComparison;
@@ -299,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sharing.checkSMSCapability();
             
             // Résoudre la Promise pour débloquer les appels en attente
-            __deferredResolve();
+            resolveDeferredModulesReady();
         }).catch(function (err) {
             console.error('Erreur chargement modules différés:', err);
             
@@ -308,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
             window.__calculateComparison = function () { showFallbackError("Erreur de chargement. Veuillez rafraîchir la page."); };
             
             // Résoudre quand même pour débloquer les appels en attente
-            __deferredResolve();
+            resolveDeferredModulesReady();
         });
     }
 
@@ -319,11 +317,11 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     if ('requestIdleCallback' in window) {
-        requestIdleCallback(loadDeferredModules, { timeout: 2000 });
+        requestIdleCallback(loadDeferredModules, { timeout: IDLE_CALLBACK_TIMEOUT_MS });
     } else {
         // Fallback Safari : double rAF + délai adaptatif selon la puissance de l'appareil
-        var isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
-        var baseDelay = isLowEndDevice ? 500 : 200;
+        var isLowEndDevice = navigator.hardwareConcurrency && navigator.hardwareConcurrency < LOW_END_CPU_THRESHOLD;
+        var baseDelay = isLowEndDevice ? LOW_END_DEFERRED_MODULE_DELAY_MS : STANDARD_DEFERRED_MODULE_DELAY_MS;
         
         setTimeout(function() {
             requestAnimationFrame(function() {
@@ -349,8 +347,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exécuter pendant l'idle time du navigateur
     if ('requestIdleCallback' in window) {
-        requestIdleCallback(warmupFinancialModeLayout, { timeout: 2000 });
+        requestIdleCallback(warmupFinancialModeLayout, { timeout: IDLE_CALLBACK_TIMEOUT_MS });
     } else {
-        setTimeout(warmupFinancialModeLayout, 1500);
+        setTimeout(warmupFinancialModeLayout, DEFERRED_PWA_IMAGE_DELAY_MS);
     }
 });
