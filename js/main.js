@@ -22,6 +22,7 @@ const LOW_END_CPU_THRESHOLD = 4;
 const LOW_END_MEMORY_THRESHOLD = 4;
 const LOW_END_DEFERRED_MODULE_DELAY_MS = 500;
 const STANDARD_DEFERRED_MODULE_DELAY_MS = 200;
+const ANIMATION_CLEANUP_SELECTOR = '.fade-in, .fade-in-slide-up, .title-reveal-optimized, .header-boat.animate';
 
 function toggleCustomPeriodContainer(selectedValue) {
     if (!DOM.customPeriodContainer) return;
@@ -90,6 +91,18 @@ function initMobileTapFeedback() {
             }
         }, MOBILE_TAP_BLUR_DELAY_MS);
     });
+}
+
+function initAnimationCleanup() {
+    document.addEventListener('animationend', function (event) {
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) {
+            return;
+        }
+        if (target.matches(ANIMATION_CLEANUP_SELECTOR)) {
+            target.classList.add('anim-complete');
+        }
+    }, true);
 }
 
 // Fallback pour les erreurs de chargement des modules
@@ -232,6 +245,7 @@ function bindUIEventListeners() {
 document.addEventListener('DOMContentLoaded', function () {
     forcePwaThemeColor();
     initMobileTapFeedback();
+    initAnimationCleanup();
 
     // Initialiser le cache DOM en premier (tous les autres modules en dépendent)
     initDOMCache();
