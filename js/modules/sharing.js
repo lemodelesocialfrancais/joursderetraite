@@ -362,6 +362,7 @@ export function openInstagramDesktopShareModal(options = {}) {
     if (modalInstructions) {
         const instructions = document.createElement('p');
         instructions.className = 'instagram-share-instructions';
+        instructions.style.cssText = 'white-space: pre-wrap; text-align: center; margin-bottom: 0.5rem; width: 100%;';
         instructions.textContent = modalInstructions;
         contentWrapper.appendChild(instructions);
     }
@@ -415,15 +416,18 @@ export function openInstagramDesktopShareModal(options = {}) {
         const textDisplay = document.createElement('div');
         textDisplay.style.cssText = `
             width: 100%;
-            max-width: 320px;
-            padding: 1.2rem;
+            max-width: 400px;
+            padding: 0.85rem;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 12px;
             color: #fff;
             font-size: 0.95rem;
-            margin-bottom: 2rem;
+            margin-top: 1.2rem;
+            margin-bottom: 1.8rem;
             white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: anywhere;
             font-style: italic;
             line-height: 1.4;
             text-align: center;
@@ -436,10 +440,11 @@ export function openInstagramDesktopShareModal(options = {}) {
     actions.style.cssText = `
         display: flex;
         flex-direction: column;
-        align-items: center;
+        align-items: stretch;
         gap: 1.2rem;
         width: 100%;
-        max-width: 320px;
+        max-width: 400px;
+        margin: 0 auto;
     `;
     modalBody.appendChild(actions);
 
@@ -1166,7 +1171,7 @@ export function shareOnSocial(platform) {
                 openInstagramDesktopShareModal({
                     imageUrl: null, // Pas d'image pour LinkedIn par défaut
                     modalTitle: 'Partager sur LinkedIn',
-                    modalInstructions: "Étape 1 : Copiez le texte. Étape 2 : Ouvrez LinkedIn et collez-le dans votre post.",
+                    modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez LinkedIn et collez-le dans votre post.",
                     openButtonLabel: 'Ouvrir LinkedIn',
                     openUrl: 'https://www.linkedin.com/feed/',
                     enableClipboard: message, // On passe le message à copier
