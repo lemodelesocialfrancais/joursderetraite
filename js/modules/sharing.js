@@ -304,7 +304,7 @@ export function openInstagramDesktopShareModal(options = {}) {
     const enableClipboard = options.enableClipboard; // On préserve la valeur (booléen ou chaîne de caractères)
 
     const modalTitle = options.modalTitle || 'Partager sur Instagram';
-    const modalInstructions = options.modalInstructions || "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, cliquez sur Créer (+), puis importez l'image enregistrée.";
+    const modalInstructions = options.modalInstructions || "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram, cliquez sur Créer (+), puis importez l'image enregistrée.";
     const dragHintText = options.dragHintText || "Vous pouvez aussi glisser-déposer l'image vers la zone d'import.";
     const openButtonLabel = options.openButtonLabel || 'Ouvrir';
 
@@ -416,8 +416,8 @@ export function openInstagramDesktopShareModal(options = {}) {
         const textDisplay = document.createElement('div');
         textDisplay.style.cssText = `
             width: 100%;
-            max-width: 400px;
-            padding: 0.85rem;
+            max-width: 480px;
+            padding: 0.5rem 0.75rem;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 12px;
@@ -443,7 +443,7 @@ export function openInstagramDesktopShareModal(options = {}) {
         align-items: stretch;
         gap: 1.2rem;
         width: 100%;
-        max-width: 400px;
+        max-width: 480px;
         margin: 0 auto;
     `;
     modalBody.appendChild(actions);
@@ -650,7 +650,7 @@ function openSnapchatDesktopShareModal(options = {}) {
     openInstagramDesktopShareModal({
         ...options,
         modalTitle: 'Partager sur Snapchat',
-        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image. Étape 2 : Ouvrez Snapchat dans la popup, puis importez ou collez l'image.",
+        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image.\nÉtape 2 : Ouvrez Snapchat dans la popup, puis importez ou collez l'image.",
         dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Snapchat Web.",
         openButtonLabel: 'Ouvrir Snapchat',
         openUrl: SNAPCHAT_WEB_URL,
@@ -670,7 +670,7 @@ function openTiktokDesktopShareModal(options = {}) {
     openInstagramDesktopShareModal({
         ...options,
         modalTitle: 'Partager sur TikTok',
-        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image. Étape 2 : Ouvrez TikTok dans la popup, puis importez l'image.",
+        modalInstructions: "Étape 1 : Copiez ou sauvegardez l'image.\nÉtape 2 : Ouvrez TikTok dans la popup, puis importez l'image.",
         dragHintText: "Vous pouvez aussi glisser-déposer l'image vers TikTok Web.",
         openButtonLabel: 'Ouvrir TikTok',
         openUrl: TIKTOK_WEB_URL,
@@ -690,7 +690,7 @@ function openTumblrDesktopShareModal(options = {}) {
     openInstagramDesktopShareModal({
         ...options,
         modalTitle: 'Partager sur Tumblr',
-        modalInstructions: "Étape 1 : Copiez, sauvegardez ou glissez-déposez l'image. Étape 2 : Ouvrez Tumblr dans la popup, créez un post photo, puis importez l'image.",
+        modalInstructions: "Étape 1 : Copiez, sauvegardez ou glissez-déposez l'image.\nÉtape 2 : Ouvrez Tumblr dans la popup, créez un post photo, puis importez l'image.",
         dragHintText: "Vous pouvez aussi glisser-déposer l'image directement dans l'éditeur Tumblr.",
         openButtonLabel: 'Ouvrir Tumblr',
         openUrl: TUMBLR_WEB_URL,
@@ -1109,14 +1109,17 @@ export function shareOnSocial(platform) {
     const messageWithUrl = getShareMessage(state.currentActiveMode, true);
     switch (platform) {
         case 'facebook':
-            if (messageWithUrl) {
-                navigator.clipboard.writeText(messageWithUrl).then(() => {
-                    showSystemNotification('Texte copié !', 'Collez-le dans la fenêtre Facebook qui va s\'ouvrir.');
-                }).catch(err => {
-                    console.error('Erreur copie:', err);
-                });
-            }
-            shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`;
+            openInstagramDesktopShareModal({
+                imageUrl: null,
+                modalTitle: 'Partager sur Facebook',
+                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Facebook et collez-le dans votre post.",
+                openButtonLabel: 'Ouvrir Facebook',
+                openUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
+                enableClipboard: messageWithUrl || message,
+                onClose: function () {
+                    // Nettoyage si besoin
+                }
+            });
             break;
         case 'twitter':
             shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
@@ -1125,6 +1128,38 @@ export function shareOnSocial(platform) {
             shareUrl = `https://www.threads.net/intent/post?text=${encodeURIComponent(message || '')}`;
             break;
         case 'tumblr':
+            if (isMobile()) {
+                // Mobile : modal guidé étape par étape
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (!blob) {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
+                    }
+
+                    const previewUrl = URL.createObjectURL(blob);
+                    openInstagramDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: generateUniqueFilename('jours-de-retraite-tumblr', 'png'),
+                        imageAlt: 'Image générée pour Tumblr',
+                        modalTitle: 'Partager sur Tumblr',
+                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Tumblr, créez un post Photo, puis importez l'image enregistrée.",
+                        dragHintText: '',
+                        openButtonLabel: 'Ouvrir Tumblr',
+                        openUrl: TUMBLR_WEB_URL,
+                        openPopupName: 'tumblr-share',
+                        enableClipboard: false,
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Erreur génération image Tumblr mobile:', err);
+                    showError("Impossible de préparer l'image pour Tumblr.");
+                });
+                return;
+            }
+
             if (isDesktop()) {
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
                     if (!blob) {
@@ -1148,9 +1183,7 @@ export function shareOnSocial(platform) {
                 });
                 return;
             }
-
-            nativeShare(state.currentActiveMode);
-            return;
+            break;
         case 'mastodon':
             if (!isDesktop()) {
                 nativeShare(state.currentActiveMode);
@@ -1217,7 +1250,7 @@ export function shareOnSocial(platform) {
                         filename: generateUniqueFilename('jours-de-retraite-instagram', 'png'),
                         imageAlt: 'Image générée pour Instagram',
                         modalTitle: 'Partager sur Instagram',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
+                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir Instagram',
                         openUrl: INSTAGRAM_WEB_URL,
@@ -1248,7 +1281,7 @@ export function shareOnSocial(platform) {
                     filename: INSTAGRAM_DRAG_FILENAME,
                     imageAlt: 'Image générée pour Instagram',
                     modalTitle: 'Partager sur Instagram',
-                    modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram dans la popup, cliquez sur Créer (+), puis importez l'image.",
+                    modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram dans la popup, cliquez sur Créer (+), puis importez l'image.",
                     dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Instagram Web.",
                     openButtonLabel: 'Ouvrir Instagram',
                     openUrl: INSTAGRAM_WEB_URL,
@@ -1281,7 +1314,7 @@ export function shareOnSocial(platform) {
                         filename: generateUniqueFilename('jours-de-retraite-snapchat', 'png'),
                         imageAlt: 'Image générée pour Snapchat',
                         modalTitle: 'Partager sur Snapchat',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Snapchat, appuyez sur l'icône Galerie (Cartes), puis importez l'image.",
+                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Snapchat, appuyez sur l'icône Galerie (Cartes), puis importez l'image.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir Snapchat',
                         openUrl: SNAPCHAT_MOBILE_URL,
@@ -1335,7 +1368,7 @@ export function shareOnSocial(platform) {
                         filename: generateUniqueFilename('jours-de-retraite-tiktok', 'png'),
                         imageAlt: 'Image générée pour TikTok',
                         modalTitle: 'Partager sur TikTok',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
+                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir TikTok',
                         openUrl: 'snssdk1233://camera',
@@ -1374,33 +1407,40 @@ export function shareOnSocial(platform) {
             });
             return;
         case 'pinterest':
-            // Pour Pinterest : utiliser l'API Web Share si disponible (mobile)
-            // Sinon, ouvrir Pinterest avec l'image statique
-
-            // Essayer d'abord avec l'API Web Share (mobile)
-            if (navigator.share && isMobile()) {
+            if (isMobile()) {
+                // Mobile : modal guidé étape par étape (remplace l'API Web Share moins esthétique)
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (blob) {
-                        // Créer un fichier à partir du blob
-                        const file = new File([blob], 'jours-de-retraite.png', { type: 'image/png' });
-
-                        navigator.share({
-                            title: 'JOURS DE RETRAITE',
-                            text: message || 'Découvrez l\'équivalent temps de cotisations de retraite',
-                            files: [file]
-                        }).catch(err => {
-                            console.warn('Erreur Web Share:', err);
-                            // Fallback vers Pinterest classique
-                            openPinterestFallback(currentUrl, message);
-                        });
-                    } else {
-                        openPinterestFallback(currentUrl, message);
+                    if (!blob) {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
                     }
+
+                    const previewUrl = URL.createObjectURL(blob);
+                    openInstagramDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: generateUniqueFilename('jours-de-retraite-pinterest', 'png'),
+                        imageAlt: 'Image générée pour Pinterest',
+                        modalTitle: 'Partager sur Pinterest',
+                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Pinterest, cliquez sur le bouton Créer (+), puis sélectionnez Épingle pour importer l'image.",
+                        dragHintText: '',
+                        openButtonLabel: 'Ouvrir Pinterest',
+                        openUrl: 'https://www.pinterest.com/', // URL de base ou builder si possible
+                        openPopupName: 'pinterest-share',
+                        enableClipboard: false,
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
+                }).catch(err => {
+                    console.error('Erreur génération image Pinterest mobile:', err);
+                    showError("Impossible de préparer l'image pour Pinterest.");
                 });
-            } else {
-                // Sur desktop ou si Web Share non disponible, utiliser Pinterest classique
-                openPinterestFallback(currentUrl, message);
+                return;
             }
+
+            // Desktop ou fallback : utiliser Pinterest classique
+            openPinterestFallback(currentUrl, message);
             return;
         case 'messenger':
             if (isDesktop()) {
@@ -1437,8 +1477,7 @@ export function shareOnSocial(platform) {
     if (navigator.share && !isDesktop()) {
         navigator.share({
             title: "Perspective Retraites",
-            text: message,
-            url: currentUrl
+            text: message
         }).catch(err => {
             console.warn("Erreur partage natif:", err);
             copyToClipboardFallback(message);
@@ -1536,19 +1575,18 @@ export function nativeShare(mode = 'temporal') {
         return;
     }
 
-    // Sur Mac et mobile : utiliser le partage natif (URL passée séparément)
-    const messageWithoutUrl = getShareMessage(mode, false);
+    // Sur Mac et mobile : utiliser le partage natif (URL simplifiée incluse dans le message)
+    const messageWithUrl = getShareMessage(mode, true);
     if (navigator.share) {
         navigator.share({
-            text: messageWithoutUrl,
-            url: SHARE_URL
+            text: messageWithUrl
         }).catch(error => {
             if (error.name !== 'AbortError') {
-                fallbackShare(messageWithoutUrl);
+                fallbackShare(messageWithUrl);
             }
         });
     } else {
-        fallbackShare(messageWithoutUrl);
+        fallbackShare(messageWithUrl);
     }
 }
 
