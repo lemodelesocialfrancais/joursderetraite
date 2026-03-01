@@ -676,8 +676,8 @@ function extractResultFromDOM(mode) {
  */
 function getResultText(mode) {
     // Priorité : état global
-    let resultText = mode === 'temporal' 
-        ? state.storedTemporalResult 
+    let resultText = mode === 'temporal'
+        ? state.storedTemporalResult
         : state.storedFinancialResult;
 
     // Fallback : DOM
@@ -734,11 +734,11 @@ function getShareMessage(mode, includeUrl = true) {
     }
 
     const currentUrl = SHARE_URL;
-    
+
     let message;
     if (mode === 'temporal') {
         let description;
-        
+
         // Si c'est un exemple, on utilise le label de l'exemple
         if (state.currentExampleLabel) {
             description = state.currentExampleLabel;
@@ -753,10 +753,10 @@ function getShareMessage(mode, includeUrl = true) {
                 currency: 'EUR',
                 maximumFractionDigits: 0
             }).format(amountValue);
-            
+
             message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         }
-        
+
         message = message.charAt(0).toUpperCase() + message.slice(1);
     } else {
         const comparisonShort = resultText.replace(/\.$/, '');
@@ -787,29 +787,29 @@ async function generateShareImageBlob(mode) {
     // Créer le canvas - format carré Pinterest
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    
+
     // Dimensions carrées (1000x1000)
     canvas.width = 1000;
     canvas.height = 1000;
-    
+
     // Fond dégradé (bleu marine et doré, thème du site)
     const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
     gradient.addColorStop(0, '#112240');
     gradient.addColorStop(1, '#0a192f');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // Ajouter une bordure dorée
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 8;
     ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
-    
+
     // Titre principal
     ctx.fillStyle = '#e6c55a';
     ctx.font = 'bold 50px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('JOURS DE RETRAITE', canvas.width / 2, 80);
-    
+
     // Ligne décorative
     ctx.beginPath();
     ctx.moveTo(100, 110);
@@ -817,7 +817,7 @@ async function generateShareImageBlob(mode) {
     ctx.strokeStyle = '#d4af37';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
     let fullText;
     if (mode === 'temporal') {
@@ -840,7 +840,7 @@ async function generateShareImageBlob(mode) {
     } else {
         fullText = `${resultText}\n(base + complémentaires).`;
     }
-    
+
     // Mise en page : garantir que le texte reste au-dessus de l'icône
     const textMaxWidth = canvas.width - 120;
     const textTop = 155;
@@ -867,28 +867,28 @@ async function generateShareImageBlob(mode) {
         ctx.fillText(line, canvas.width / 2, centeredTextStartY + index * fittedText.lineHeight);
     });
     ctx.textBaseline = 'alphabetic';
-    
+
     // Ajouter l'icône dans la moitié inférieure
     return new Promise((resolve) => {
         const iconUrl = 'https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png';
         const iconImg = new Image();
         iconImg.crossOrigin = 'anonymous';
-        iconImg.onload = function() {
+        iconImg.onload = function () {
             // Dessiner l'icône dans la zone basse sans chevauchement du texte
             const iconX = (canvas.width - iconSize) / 2;
             ctx.drawImage(iconImg, iconX, iconY, iconSize, iconSize);
-            
+
             // URL en bas - PLUS GRAND et plus haut
             ctx.fillStyle = '#d4af37';
             ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.fillText('lemodelesocialfrancais.github.io/joursderetraite', canvas.width / 2, 960);
-            
+
             // Convertir en Blob
             canvas.toBlob((blob) => {
                 resolve(blob);
             }, 'image/png');
         };
-        iconImg.onerror = function() {
+        iconImg.onerror = function () {
             // Si l'icône ne charge pas, résoudre avec le texte seulement
             ctx.fillStyle = '#d4af37';
             ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -990,7 +990,7 @@ export function shareOnSocial(platform) {
     const platformsWithImageParam = ['pinterest'];
     const includeUrl = !platformsWithUrlParam.includes(platform);
     const includeImage = platformsWithImageParam.includes(platform);
-    
+
     const message = getShareMessage(state.currentActiveMode, includeUrl);
     const currentUrl = SHARE_URL;
 
@@ -1039,8 +1039,8 @@ export function shareOnSocial(platform) {
                 return;
             }
 
-            shareUrl = `https://www.tumblr.com/share/link?url=${encodeURIComponent(currentUrl)}&description=${encodeURIComponent(message || '')}`;
-            break;
+            nativeShare(state.currentActiveMode);
+            return;
         case 'mastodon':
             if (!isDesktop()) {
                 nativeShare(state.currentActiveMode);
@@ -1161,8 +1161,34 @@ export function shareOnSocial(platform) {
             return;
         case 'tiktok':
             if (isMobile()) {
-                // Mobile: lien simple pour laisser l'OS ouvrir l'application native si disponible
-                window.location.href = TIKTOK_MOBILE_URL;
+                // Mobile : enregistrer l'image puis ouvrir TikTok
+                generateShareImageBlob(state.currentActiveMode).then(blob => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.download = 'jours-de-retraite-tiktok.png';
+                        link.href = url;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+
+                        showSuccess("Image enregistrée. TikTok va s'ouvrir : appuyez sur +, puis importez l'image depuis votre galerie.");
+
+                        window.setTimeout(function () {
+                            openMobileAppWithFallback(
+                                'snssdk1233://camera',
+                                TIKTOK_WEB_URL,
+                                1300
+                            );
+                        }, 450);
+                    } else {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                    }
+                }).catch(err => {
+                    console.error('Erreur génération image TikTok mobile:', err);
+                    showError("Impossible de préparer l'image pour TikTok.");
+                });
                 return;
             }
 
@@ -1190,14 +1216,14 @@ export function shareOnSocial(platform) {
         case 'pinterest':
             // Pour Pinterest : utiliser l'API Web Share si disponible (mobile)
             // Sinon, ouvrir Pinterest avec l'image statique
-            
+
             // Essayer d'abord avec l'API Web Share (mobile)
             if (navigator.share && isMobile()) {
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
                     if (blob) {
                         // Créer un fichier à partir du blob
                         const file = new File([blob], 'jours-de-retraite.png', { type: 'image/png' });
-                        
+
                         navigator.share({
                             title: 'JOURS DE RETRAITE',
                             text: message || 'Découvrez l\'équivalent temps de cotisations de retraite',
@@ -1327,7 +1353,7 @@ function detectPlatform() {
     const isWindows = /Windows NT/.test(userAgent);
     const isMac = /Mac OS X/.test(userAgent) && !/iPhone|iPad/.test(userAgent);
     const isLinux = /Linux/.test(userAgent) && !/Android/.test(userAgent);
-    
+
     return { isWindows, isMac, isLinux, isMobile: isMobile() };
 }
 
@@ -1461,11 +1487,11 @@ function showShareHelperPopup(text) {
 
     // Focus sur le textarea (sans sélectionner le texte pour plus d'esthétique)
     const textarea = document.getElementById('share-helper-text');
-    
+
     // Ajuster la hauteur automatiquement au contenu
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
-    
+
     textarea.focus();
 
     // Gestionnaires d'événements
@@ -1476,7 +1502,7 @@ function showShareHelperPopup(text) {
 
     const closeBtn = document.getElementById('share-helper-close');
     const copyBtn = document.getElementById('share-helper-copy');
-    
+
     // Effets de survol pour le bouton Fermer
     closeBtn.addEventListener('mouseenter', () => {
         closeBtn.style.borderColor = '#d4af37';
@@ -1490,7 +1516,7 @@ function showShareHelperPopup(text) {
         closeBtn.style.background = 'rgba(255, 255, 255, 0.05)';
         closeBtn.style.transform = 'translateY(0)';
     });
-    
+
     // Effets de survol pour le bouton Copier
     copyBtn.addEventListener('mouseenter', () => {
         copyBtn.style.borderColor = '#d4af37';
@@ -1506,7 +1532,7 @@ function showShareHelperPopup(text) {
         copyBtn.style.transform = 'translateY(0)';
         copyBtn.style.boxShadow = '0 4px 15px rgba(212, 175, 55, 0.3)';
     });
-    
+
     closeBtn.addEventListener('click', closePopup);
     overlay.addEventListener('click', closePopup);
 
