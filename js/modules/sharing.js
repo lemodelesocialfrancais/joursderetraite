@@ -800,9 +800,9 @@ function getShareMessage(mode, includeUrl = true) {
     }
 
     if (includeUrl) {
-        // On utilise l'URL complète avec https:// pour assurer que les plateformes 
-        // (ex: Telegram, LinkedIn) reconnaissent le lien et créent un aperçu automatique.
-        message += `\nÀ vous de tester sur :\n${currentUrl}`;
+        const displayUrl = currentUrl.replace(/^https?:\/\//, '');
+        // On affiche l'URL simplifiée à la fin du message
+        message += `\nÀ vous de tester sur :\n${displayUrl}`;
         console.log('Final message with URL:', message);
     }
 
@@ -1101,10 +1101,16 @@ export function shareOnSocial(platform) {
             shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
             break;
         case 'telegram':
-            // En n'utilisant QUE le paramètre 'text' (qui contient déjà l'URL complète à la fin),
-            // on évite que Telegram n'ajoute une deuxième fois le lien au début.
-            // Le lien complet avec https:// permet à Telegram de générer l'aperçu du site.
-            shareUrl = `https://t.me/share/url?text=${encodeURIComponent(message)}`;
+            if (isMobile()) {
+                // Sur Mobile, le lien profond tg://msg est le seul moyen d'avoir le message 
+                // exactement comme on veut (lien à la fin) sans que Telegram ne rajoute 
+                // une copie du lien au début.
+                shareUrl = `tg://msg?text=${encodeURIComponent(message)}`;
+            } else {
+                // Sur Desktop, on utilise le lien Web classique.
+                // Note : Telegram Web (t.me) rajoutera le lien au début car le paramètre 'url' est obligatoire.
+                shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
+            }
             break;
         case 'instagram':
             if (isMobile()) {
