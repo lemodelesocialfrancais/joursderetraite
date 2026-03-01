@@ -285,6 +285,7 @@ function closeInstagramShareModal() {
  * @param {string} [options.openButtonLabel]
  * @param {boolean} [options.enableClipboard]
  * @param {Function} [options.onClose]
+ * @param {Function} [options.onOpenPlatform]
  */
 export function openInstagramDesktopShareModal(options = {}) {
     const imageUrl = options.imageUrl;
@@ -294,6 +295,7 @@ export function openInstagramDesktopShareModal(options = {}) {
         ? options.filename
         : INSTAGRAM_DRAG_FILENAME;
     const onClose = typeof options.onClose === 'function' ? options.onClose : null;
+    const onOpenPlatform = typeof options.onOpenPlatform === 'function' ? options.onOpenPlatform : null;
 
     const openUrl = options.openUrl || options.instagramUrl || INSTAGRAM_WEB_URL;
     const openPopupName = options.openPopupName || 'instagram-web-share';
@@ -441,12 +443,16 @@ export function openInstagramDesktopShareModal(options = {}) {
     }
 
     function handleOpenPlatformClick() {
-        openShareUrlWithDeviceStrategy(
-            openUrl,
-            openPopupName,
-            openPopupWidth,
-            openPopupHeight
-        );
+        if (onOpenPlatform) {
+            onOpenPlatform();
+        } else {
+            openShareUrlWithDeviceStrategy(
+                openUrl,
+                openPopupName,
+                openPopupWidth,
+                openPopupHeight
+            );
+        }
     }
 
     async function resolvePngBlobForClipboard() {
@@ -1083,31 +1089,37 @@ export function shareOnSocial(platform) {
             shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
             break;
         case 'instagram':
-            // Mobile : enregistrer l'image puis ouvrir la caméra Instagram
             if (isMobile()) {
+                // Mobile : modal guidé étape par étape
                 generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.download = generateUniqueFilename('jours-de-retraite-instagram', 'png');
-                        link.href = url;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        URL.revokeObjectURL(url);
+                    if (!blob) {
+                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+                        return;
+                    }
 
-                        showSuccess("Image enregistrée. Instagram va s'ouvrir: créez un post, puis choisissez l'image générée dans votre galerie.");
-
-                        window.setTimeout(function () {
+                    const previewUrl = URL.createObjectURL(blob);
+                    openInstagramDesktopShareModal({
+                        imageUrl: previewUrl,
+                        imageBlob: blob,
+                        filename: generateUniqueFilename('jours-de-retraite-instagram', 'png'),
+                        imageAlt: 'Image générée pour Instagram',
+                        modalTitle: 'Partager sur Instagram',
+                        modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
+                        dragHintText: '',
+                        openButtonLabel: 'Ouvrir Instagram',
+                        onOpenPlatform: function () {
                             openMobileAppWithFallback(
                                 INSTAGRAM_MOBILE_CAMERA_URL,
                                 INSTAGRAM_WEB_URL,
                                 1300
                             );
-                        }, 450);
-                    } else {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                    }
+                        },
+                        openPopupName: 'instagram-share',
+                        enableClipboard: false,
+                        onClose: function () {
+                            URL.revokeObjectURL(previewUrl);
+                        }
+                    });
                 }).catch(err => {
                     console.error('Erreur génération image Instagram mobile:', err);
                     showError("Impossible de préparer l'image pour Instagram.");
@@ -1193,7 +1205,13 @@ export function shareOnSocial(platform) {
                         modalInstructions: "Étape 1 : Sauvegardez l'image. Étape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
                         dragHintText: '',
                         openButtonLabel: 'Ouvrir TikTok',
-                        openUrl: TIKTOK_MOBILE_URL,
+                        onOpenPlatform: function () {
+                            openMobileAppWithFallback(
+                                'snssdk1233://camera',
+                                TIKTOK_WEB_URL,
+                                1300
+                            );
+                        },
                         openPopupName: 'tiktok-share',
                         enableClipboard: false,
                         onClose: function () {
