@@ -417,7 +417,7 @@ export function openInstagramDesktopShareModal(options = {}) {
         textDisplay.style.cssText = `
             width: 100%;
             max-width: 480px;
-            padding: 0.4rem 0.8rem;
+            padding: 0.3rem 0.5rem;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 12px;
@@ -1120,7 +1120,7 @@ export function shareOnSocial(platform) {
                     // Nettoyage si besoin
                 }
             });
-            break;
+            return;
         case 'twitter':
             shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
             break;
