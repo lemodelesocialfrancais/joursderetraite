@@ -305,15 +305,7 @@ export function openInstagramDesktopShareModal(options = {}) {
     contentWrapper.className = 'instagram-share-content-wrap';
     modalBody.appendChild(contentWrapper);
 
-    // Instructions
-    if (modalInstructions) {
-        const instructions = document.createElement('p');
-        instructions.className = 'instagram-share-instructions';
-        instructions.textContent = modalInstructions;
-        contentWrapper.appendChild(instructions);
-    }
-
-    // Image (Conditionnelle)
+    // Image (Conditionnelle) - affichée en premier
     if (imageUrl) {
         const imgWrapper = document.createElement('div');
         imgWrapper.className = 'instagram-share-preview-wrap';
@@ -352,6 +344,14 @@ export function openInstagramDesktopShareModal(options = {}) {
         textDisplay.className = 'instagram-share-text-display';
         textDisplay.textContent = textToCopy;
         contentWrapper.appendChild(textDisplay);
+    }
+
+    // Instructions - affichées après l'image
+    if (modalInstructions) {
+        const instructions = document.createElement('p');
+        instructions.className = 'instagram-share-instructions';
+        instructions.textContent = modalInstructions;
+        contentWrapper.appendChild(instructions);
     }
 
     const actions = document.createElement('div');
