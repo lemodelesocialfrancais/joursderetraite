@@ -618,6 +618,10 @@ body {
     }
 }
 
+.mode-toggle-btn.mobile-tap-glow {
+    box-shadow: none !important;
+}
+
 /* ============================================
     10. ACCORDÉON MÉTHODOLOGIE
     ============================================ */
