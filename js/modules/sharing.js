@@ -416,8 +416,8 @@ export function openInstagramDesktopShareModal(options = {}) {
         const textDisplay = document.createElement('div');
         textDisplay.style.cssText = `
             width: 100%;
-            max-width: 480px;
-            padding: 0.5rem 0.75rem;
+            max-width: 560px;
+            padding: 0.2rem 0.4rem;
             background: rgba(255,255,255,0.04);
             border: 1px solid rgba(212, 175, 55, 0.2);
             border-radius: 12px;
@@ -443,7 +443,7 @@ export function openInstagramDesktopShareModal(options = {}) {
         align-items: stretch;
         gap: 1.2rem;
         width: 100%;
-        max-width: 480px;
+        max-width: 560px;
         margin: 0 auto;
     `;
     modalBody.appendChild(actions);
