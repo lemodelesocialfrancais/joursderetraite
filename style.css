@@ -885,9 +885,11 @@ body {
         opacity: 0;
         transform: translateY(100px) scale(0.8);
     }
+
     60% {
         transform: translateY(-10px) scale(1.02);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -899,9 +901,11 @@ body {
         opacity: 0;
         transform: translateY(30px) scale(0.95);
     }
+
     60% {
         transform: translateY(-5px) scale(1.02);
     }
+
     100% {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -913,6 +917,7 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+
     100% {
         opacity: 0;
         transform: translateY(20px);
@@ -941,11 +946,27 @@ body {
 }
 
 @keyframes fieldShake {
-    0%, 100% { transform: translateX(0); }
-    20% { transform: translateX(-6px); }
-    40% { transform: translateX(6px); }
-    60% { transform: translateX(-4px); }
-    80% { transform: translateX(4px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    20% {
+        transform: translateX(-6px);
+    }
+
+    40% {
+        transform: translateX(6px);
+    }
+
+    60% {
+        transform: translateX(-4px);
+    }
+
+    80% {
+        transform: translateX(4px);
+    }
 }
 
 /* ============================================
@@ -1018,29 +1039,138 @@ body {
 /* ============================================
     13. BULLES DÉCORATIVES
     ============================================ */
-.bubbles { position: fixed; bottom: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: -1; transform: translateZ(0); }
-.bubble { position: absolute; bottom: -20px; background: radial-gradient(circle at 30% 30%, rgba(212, 175, 55, 0.2), transparent); border-radius: 50%; will-change: transform, opacity; animation: rise 8s infinite ease-in; }
-.bubble:nth-child(1) { width: 10px; height: 10px; left: 10%; animation-delay: 0s; }
-.bubble:nth-child(2) { width: 6px; height: 6px; left: 30%; animation-delay: 2s; }
-.bubble:nth-child(3) { width: 14px; height: 14px; left: 50%; animation-delay: 4s; }
-.bubble:nth-child(4) { width: 8px; height: 8px; left: 70%; animation-delay: 1s; }
-.bubble:nth-child(5) { width: 12px; height: 12px; left: 85%; animation-delay: 3s; }
-@keyframes rise { 0% { transform: translateY(0) scale(1); opacity: 0.6; } 100% { transform: translateY(-100vh) scale(0.5); opacity: 0; } }
+.bubbles {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: -1;
+    transform: translateZ(0);
+}
+
+.bubble {
+    position: absolute;
+    bottom: -20px;
+    background: radial-gradient(circle at 30% 30%, rgba(212, 175, 55, 0.2), transparent);
+    border-radius: 50%;
+    will-change: transform, opacity;
+    animation: rise 8s infinite ease-in;
+}
+
+.bubble:nth-child(1) {
+    width: 10px;
+    height: 10px;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.bubble:nth-child(2) {
+    width: 6px;
+    height: 6px;
+    left: 30%;
+    animation-delay: 2s;
+}
+
+.bubble:nth-child(3) {
+    width: 14px;
+    height: 14px;
+    left: 50%;
+    animation-delay: 4s;
+}
+
+.bubble:nth-child(4) {
+    width: 8px;
+    height: 8px;
+    left: 70%;
+    animation-delay: 1s;
+}
+
+.bubble:nth-child(5) {
+    width: 12px;
+    height: 12px;
+    left: 85%;
+    animation-delay: 3s;
+}
+
+@keyframes rise {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0.6;
+    }
+
+    100% {
+        transform: translateY(-100vh) scale(0.5);
+        opacity: 0;
+    }
+}
 
 /* ============================================
     13b. BOUTON EXEMPLE - Marching Ants
     ============================================ */
-.example-btn { background-color: rgba(212, 175, 55, 0.05); border: none; color: #d4af37; padding: 0 0.6rem; height: 32px; font-size: 0.7rem; font-weight: 700; border-radius: 11px; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.3rem; flex-shrink: 0; z-index: 10; }
-.example-btn-wrapper { position: relative; display: inline-flex; transition: all var(--transition-base); }
+.example-btn {
+    background-color: rgba(212, 175, 55, 0.05);
+    border: none;
+    color: #d4af37;
+    padding: 0 0.6rem;
+    height: 32px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border-radius: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-shrink: 0;
+    z-index: 10;
+}
+
+.example-btn-wrapper {
+    position: relative;
+    display: inline-flex;
+    transition: all var(--transition-base);
+}
 
 @media (hover: hover) {
-    .example-btn-wrapper:hover { transform: translateY(-2px); }
+    .example-btn-wrapper:hover {
+        transform: translateY(-2px);
+    }
 }
-.example-btn-border-svg { position: absolute; top: -2px; left: -2px; pointer-events: none; z-index: 1; overflow: visible; }
-.example-btn-border-svg path { fill: none; stroke: #d4af37; stroke-width: 2.5; stroke-linecap: round; }
-.example-btn:hover { background-color: rgba(212, 175, 55, 0.15) !important; color: #f0d78c !important; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
-.example-btn:active { transform: translateY(1px); }
-.example-btn svg:not(.example-btn-border), .example-btn span { position: relative; z-index: 1; }
+
+.example-btn-border-svg {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    pointer-events: none;
+    z-index: 1;
+    overflow: visible;
+}
+
+.example-btn-border-svg path {
+    fill: none;
+    stroke: #d4af37;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+}
+
+.example-btn:hover {
+    background-color: rgba(212, 175, 55, 0.15) !important;
+    color: #f0d78c !important;
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+}
+
+.example-btn:active {
+    transform: translateY(1px);
+}
+
+.example-btn svg:not(.example-btn-border),
+.example-btn span {
+    position: relative;
+    z-index: 1;
+}
 
 /* ============================================
     14. UTILITAIRES
@@ -1642,9 +1772,9 @@ select.input-field option {
 .instagram-share-copy-btn,
 .instagram-share-save-btn,
 .instagram-share-open-btn {
-    flex: 1;
-    min-width: 150px;
-    min-height: 42px;
+    width: 100%;
+    max-width: 400px;
+    min-height: 48px;
     border-radius: var(--radius-full);
     border: 1px solid var(--gold-500);
     text-align: center;
@@ -1680,6 +1810,7 @@ select.input-field option {
 }
 
 @media (hover: hover) {
+
     .instagram-share-copy-btn:hover,
     .instagram-share-save-btn:hover,
     .instagram-share-open-btn:hover {
@@ -1927,7 +2058,8 @@ select.input-field option {
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
-    pointer-events: none; /* Empêche les clics parasites quand le dropdown se ferme */
+    pointer-events: none;
+    /* Empêche les clics parasites quand le dropdown se ferme */
     transform: translateY(-10px);
     transition: all var(--transition-base);
     box-shadow: var(--shadow-lg);
@@ -1986,7 +2118,8 @@ select.input-field option {
 .custom-dropdown.open .dropdown-options {
     opacity: 1;
     visibility: visible;
-    pointer-events: auto; /* Permet les clics sur les options quand le dropdown est ouvert */
+    pointer-events: auto;
+    /* Permet les clics sur les options quand le dropdown est ouvert */
     transform: translateY(0);
 }
 
