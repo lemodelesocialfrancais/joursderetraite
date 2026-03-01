@@ -1652,6 +1652,12 @@ select.input-field option {
     }
 }
 
+.share-btn.discord:hover {
+    background-color: #5865f2 !important;
+    color: white !important;
+    border-color: #5865f2 !important;
+}
+
 /* All social buttons now use the same gold hover effect from the base .share-btn:hover */
 
 /* ============================================
