@@ -377,10 +377,13 @@ export function openInstagramDesktopShareModal(options = {}) {
         openPlatformBtn.href = '#';
     } else {
         openPlatformBtn.href = openUrl;
-        // Pour les deep links sur mobile, target="_blank" peut aider à éviter certains blocages
-        // tout en gardant notre site ouvert en arrière-plan.
-        openPlatformBtn.target = '_blank';
-        openPlatformBtn.rel = 'noopener noreferrer';
+        // Pour les liens Web classiques, target="_blank" est souhaitable.
+        // Pour les deep links (instagram://, etc.), il faut éviter target="_blank" 
+        // car certains navigateurs mobiles ouvrent alors un onglet vide au lieu de l'app.
+        if (openUrl && (openUrl.startsWith('http') || openUrl.startsWith('https'))) {
+            openPlatformBtn.target = '_blank';
+            openPlatformBtn.rel = 'noopener noreferrer';
+        }
     }
 
     let copyBtn = null;
