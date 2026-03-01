@@ -308,8 +308,9 @@ export function openInstagramDesktopShareModal(options = {}) {
     const dragHintText = options.dragHintText || "Vous pouvez aussi glisser-déposer l'image vers la zone d'import.";
     const openButtonLabel = options.openButtonLabel || 'Ouvrir';
 
-    if (!imageUrl) {
-        showWarning("Aucune image disponible pour le partage.");
+    // On autorise l'ouverture si on a soit une image, soit du texte à copier (LinkedIn mobile), soit une URL à ouvrir
+    if (!imageUrl && !options.enableClipboard && !openUrl) {
+        showWarning("Aucun contenu disponible pour le partage.");
         return;
     }
 
@@ -618,28 +619,11 @@ export function openInstagramDesktopShareModal(options = {}) {
         }
     }
 
-    imageEl.addEventListener('dragstart', function (event) {
-        if (!event.dataTransfer) return;
-
-        event.dataTransfer.effectAllowed = 'copy';
-        event.dataTransfer.dropEffect = 'copy';
-        event.dataTransfer.setData('text/uri-list', imageUrl);
-        event.dataTransfer.setData('text/plain', imageUrl);
-        event.dataTransfer.setData('DownloadURL', `image/png:${filename}:${imageUrl}`);
-
-        if (dragBlobPng && event.dataTransfer.items && typeof event.dataTransfer.items.add === 'function') {
-            try {
-                const dragFile = new File([dragBlobPng], filename, { type: 'image/png' });
-                event.dataTransfer.items.add(dragFile);
-            } catch (dragError) {
-                console.warn('Ajout de fichier au drag indisponible:', dragError);
-            }
-        }
-    });
-
     closeBtn.addEventListener('click', finalizeClose);
     overlay.addEventListener('click', handleOverlayClick);
-    saveBtn.addEventListener('click', handleSaveClick);
+    if (saveBtn) {
+        saveBtn.addEventListener('click', handleSaveClick);
+    }
     openPlatformBtn.addEventListener('click', handleOpenPlatformClick);
     if (copyBtn) {
         copyBtn.addEventListener('click', handleCopyClick);
