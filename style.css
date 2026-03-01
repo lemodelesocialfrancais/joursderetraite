@@ -1773,7 +1773,7 @@ select.input-field option {
 .instagram-share-save-btn,
 .instagram-share-open-btn {
     width: 100%;
-    max-width: 400px;
+    max-width: 480px;
     min-height: 48px;
     border-radius: var(--radius-full);
     border: 1px solid var(--gold-500);
