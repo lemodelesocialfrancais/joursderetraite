@@ -529,7 +529,6 @@ export function openInstagramDesktopShareModal(options = {}) {
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            showSuccess("Sauvegarde de l'image lancée.");
         } catch (error) {
             console.error('Erreur sauvegarde image:', error);
             showError("Impossible de sauvegarder l'image automatiquement.");
@@ -578,7 +577,6 @@ export function openInstagramDesktopShareModal(options = {}) {
         try {
             if (isTextCopy) {
                 await navigator.clipboard.writeText(enableClipboard);
-                showSuccess("Texte copié dans le presse-papiers.");
             } else {
                 if (!supportsImageClipboard()) {
                     showWarning("Votre navigateur ne permet pas la copie d'image. Utilisez la sauvegarde.");
@@ -588,10 +586,9 @@ export function openInstagramDesktopShareModal(options = {}) {
                 await navigator.clipboard.write([
                     new ClipboardItem({ 'image/png': pngBlob })
                 ]);
-                showSuccess("Image copiée dans le presse-papiers.");
             }
 
-            copyBtn.textContent = 'Copiée !';
+            copyBtn.textContent = 'Copié !';
             setTimeout(function () {
                 if (!modalClosed && copyBtn) {
                     copyBtn.textContent = defaultLabel;
@@ -1443,22 +1440,34 @@ export function shareOnSocial(platform) {
             openPinterestFallback(currentUrl, message);
             return;
         case 'messenger':
+            if (isMobile()) {
+                // Mobile : modal guidé (Messenger app ne supporte pas bien le texte via URL)
+                openInstagramDesktopShareModal({
+                    imageUrl: null,
+                    modalTitle: 'Partager sur Messenger',
+                    modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Choisissez un ami dans Messenger et collez le message.",
+                    openButtonLabel: 'Ouvrir Messenger',
+                    openUrl: `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`,
+                    enableClipboard: messageWithUrl || message,
+                    onClose: function () {
+                        // Nettoyage si besoin
+                    }
+                });
+                return;
+            }
+
             if (isDesktop()) {
                 const messengerText = getShareMessage(state.currentActiveMode, true) || currentUrl;
 
                 navigator.clipboard.writeText(messengerText).then(() => {
-                    showSuccess("Lien copié. Collez-le dans Messenger.");
+                    // Pas de toast ici comme convenu, le bouton s'en chargera
                 }).catch(err => {
                     console.warn("Copie Messenger desktop indisponible:", err);
-                    showWarning("Ouvrez Messenger puis collez le lien manuellement.");
                 });
 
                 openShareUrlWithDeviceStrategy('https://www.messenger.com/', 'messenger-share');
                 return;
             }
-
-            // Mobile: deep link Messenger (laisse l'OS ouvrir l'application native)
-            shareUrl = `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`;
             break;
         default:
             shareUrl = null;
