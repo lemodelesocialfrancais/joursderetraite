@@ -5,18 +5,18 @@
 
 import { state } from './state.js';
 import { showError, showWarning, showSuccess } from './toast.js';
+import { DOM } from './dom-cache.js';
 
 // === URL DE PARTAGE ===
 const SHARE_URL = 'https://lemodelesocialfrancais.github.io/joursderetraite/';
 
 // === REGEX PARTAGÉES (pré-compilées pour performance) ===
 const MOBILE_REGEX = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+const IS_MOBILE_DEVICE = MOBILE_REGEX.test(navigator.userAgent);
 const INSTAGRAM_WEB_URL = 'https://www.instagram.com/';
-const INSTAGRAM_MOBILE_CAMERA_URL = 'instagram://camera';
 const SNAPCHAT_WEB_URL = 'https://web.snapchat.com/';
 const SNAPCHAT_MOBILE_URL = 'https://www.snapchat.com/';
 const TIKTOK_WEB_URL = 'https://www.tiktok.com/upload';
-const TIKTOK_MOBILE_URL = 'https://www.tiktok.com/';
 const TUMBLR_WEB_URL = 'https://www.tumblr.com/new/photo';
 const INSTAGRAM_MODAL_ID = 'instagram-share-modal';
 const INSTAGRAM_MODAL_OVERLAY_ID = 'instagram-share-overlay';
@@ -24,8 +24,38 @@ const INSTAGRAM_DRAG_FILENAME = 'jours-de-retraite-instagram.png';
 const SNAPCHAT_DRAG_FILENAME = 'jours-de-retraite-snapchat.png';
 const TIKTOK_DRAG_FILENAME = 'jours-de-retraite-tiktok.png';
 const TUMBLR_DRAG_FILENAME = 'jours-de-retraite-tumblr.png';
+const SHARE_CURRENCY_FORMATTER = new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: 'EUR',
+    maximumFractionDigits: 0
+});
+const SHARE_URL_DISPLAY = SHARE_URL.replace(/^https?:\/\//, '');
+const PLATFORMS_WITH_URL_PARAM = new Set(['facebook', 'messenger', 'reddit', 'tumblr']);
+const RESULT_SECTION_TEMPORAL_SELECTOR = '#result-section-temporal';
+const RESULT_SECTION_FINANCIAL_SELECTOR = '#result-section-financial';
+const SHARE_SECTION_SELECTOR = '.share-section';
+const SHARE_BUTTONS_CONTAINER_SELECTOR = '.share-buttons';
+const COPY_RESULT_ICON_RESET_DELAY_MS = 2000;
+const MODAL_COPY_LABEL_RESET_DELAY_MS = 1200;
+const SHARE_HELPER_COPY_LABEL_RESET_DELAY_MS = 5000;
+const COPY_SUCCESS_ICON_SVG = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+const SHARE_HELPER_POPUP_ID = 'share-helper-popup';
+const SHARE_HELPER_OVERLAY_ID = 'share-helper-overlay';
+const RESULT_GRID_TEMPORAL_SELECTOR = '.result-grid-temporal';
+const RESULT_BOX_SELECTOR = '.result-box';
+const RESULT_VALUE_SELECTOR = '.value span';
+const RESULT_LABEL_SELECTOR = '.label';
+const COPY_BUTTON_SELECTOR = '.copy-btn';
+const NBSP_GLOBAL_REGEX = /\u00A0/g;
+const COMMA_GLOBAL_REGEX = /,/g;
+const SHARE_IMAGE_ICON_URL = 'https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png';
 
 let closeInstagramModal = null;
+let shareButtonsBound = false;
+let shareImageCacheKey = '';
+let shareImageCacheBlob = null;
+let shareImagePendingKey = '';
+let shareImagePendingPromise = null;
 
 /**
  * Génère un nom de fichier unique avec horodatage
@@ -41,44 +71,11 @@ function generateUniqueFilename(baseName, extension) {
 }
 
 /**
- * Affiche une notification système native
- * @param {string} title - Titre de la notification
- * @param {string} body - Corps du message
- */
-function showSystemNotification(title, body) {
-    if (!('Notification' in window)) {
-        return;
-    }
-
-    if (Notification.permission === 'granted') {
-        new Notification(title, {
-            body: body,
-            icon: '/icon-192x192.png',
-            badge: '/icon-192x192.png',
-            tag: 'share-notification',
-            requireInteraction: false
-        });
-    } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification(title, {
-                    body: body,
-                    icon: '/icon-192x192.png',
-                    badge: '/icon-192x192.png',
-                    tag: 'share-notification',
-                    requireInteraction: false
-                });
-            }
-        });
-    }
-}
-
-/**
  * Détecte si l'utilisateur est sur mobile
  * @returns {boolean}
  */
 function isMobile() {
-    return MOBILE_REGEX.test(navigator.userAgent);
+    return IS_MOBILE_DEVICE;
 }
 
 /**
@@ -147,53 +144,6 @@ function openShareUrlWithDeviceStrategy(url, popupName = 'social-share', width =
     }
 
     window.location.href = url;
-}
-
-/**
- * Tente d'ouvrir une app mobile via deep link, puis fallback web si l'app n'est pas disponible.
- * @param {string} appUrl
- * @param {string} fallbackUrl
- * @param {number} timeoutMs
- */
-function openMobileAppWithFallback(appUrl, fallbackUrl, timeoutMs = 1200) {
-    let appOpened = false;
-    let timerId = null;
-
-    function cleanup() {
-        if (timerId) {
-            window.clearTimeout(timerId);
-            timerId = null;
-        }
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-        window.removeEventListener('pagehide', handlePageHide);
-    }
-
-    function markAppOpened() {
-        appOpened = true;
-        cleanup();
-    }
-
-    function handleVisibilityChange() {
-        if (document.hidden) {
-            markAppOpened();
-        }
-    }
-
-    function handlePageHide() {
-        markAppOpened();
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('pagehide', handlePageHide);
-
-    timerId = window.setTimeout(function () {
-        if (!appOpened && fallbackUrl) {
-            window.location.href = fallbackUrl;
-        }
-        cleanup();
-    }, timeoutMs);
-
-    window.location.href = appUrl;
 }
 
 /**
@@ -291,6 +241,7 @@ export function openInstagramDesktopShareModal(options = {}) {
     const imageUrl = options.imageUrl;
     const imageAlt = options.imageAlt || 'Image à partager';
     const imageBlob = options.imageBlob instanceof Blob ? options.imageBlob : null;
+    const mobile = isMobile();
     const filename = typeof options.filename === 'string' && options.filename
         ? options.filename
         : INSTAGRAM_DRAG_FILENAME;
@@ -302,6 +253,8 @@ export function openInstagramDesktopShareModal(options = {}) {
     const openPopupWidth = Number(options.openPopupWidth) || 1100;
     const openPopupHeight = Number(options.openPopupHeight) || 820;
     const enableClipboard = options.enableClipboard; // On préserve la valeur (booléen ou chaîne de caractères)
+    const isTextCopy = typeof enableClipboard === 'string';
+    const textToCopy = isTextCopy ? enableClipboard : '';
 
     const modalTitle = options.modalTitle || 'Partager sur Instagram';
     const modalInstructions = options.modalInstructions || "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram, cliquez sur Créer (+), puis importez l'image enregistrée.";
@@ -349,20 +302,13 @@ export function openInstagramDesktopShareModal(options = {}) {
     modal.appendChild(modalBody);
 
     const contentWrapper = document.createElement('div');
-    contentWrapper.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 100%;
-        margin-bottom: 2rem;
-    `;
+    contentWrapper.className = 'instagram-share-content-wrap';
     modalBody.appendChild(contentWrapper);
 
     // Instructions
     if (modalInstructions) {
         const instructions = document.createElement('p');
         instructions.className = 'instagram-share-instructions';
-        instructions.style.cssText = 'white-space: pre-wrap; text-align: center; margin-bottom: 0.5rem; width: 100%;';
         instructions.textContent = modalInstructions;
         contentWrapper.appendChild(instructions);
     }
@@ -370,25 +316,16 @@ export function openInstagramDesktopShareModal(options = {}) {
     // Image (Conditionnelle)
     if (imageUrl) {
         const imgWrapper = document.createElement('div');
-        imgWrapper.style.cssText = `
-            position: relative;
-            width: 100%;
-            max-width: 320px;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            background: #0d1b31;
-            margin-bottom: 1.5rem;
-        `;
+        imgWrapper.className = 'instagram-share-preview-wrap';
         contentWrapper.appendChild(imgWrapper);
 
         const img = document.createElement('img');
         img.src = imageUrl;
         img.alt = imageAlt;
-        img.style.cssText = 'width: 100%; height: auto; display: block;';
+        img.className = 'instagram-share-preview-image';
         imgWrapper.appendChild(img);
 
-        if (!isMobile() && dragHintText) {
+        if (!mobile && dragHintText) {
             const dragHint = document.createElement('div');
             dragHint.className = 'instagram-share-drag-hint';
             dragHint.textContent = dragHintText;
@@ -410,42 +347,15 @@ export function openInstagramDesktopShareModal(options = {}) {
     }
 
     // Affichage du texte si c'est un partage de texte (ex: LinkedIn)
-    let textToCopy = '';
-    if (typeof enableClipboard === 'string') {
-        textToCopy = enableClipboard;
+    if (isTextCopy) {
         const textDisplay = document.createElement('div');
-        textDisplay.style.cssText = `
-            width: 100%;
-            max-width: 480px;
-            padding: 0.3rem 0.5rem;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(212, 175, 55, 0.2);
-            border-radius: 12px;
-            color: #fff;
-            font-size: 0.95rem;
-            margin-top: 1.2rem;
-            margin-bottom: 1.8rem;
-            white-space: pre-wrap;
-            word-break: break-word;
-            overflow-wrap: anywhere;
-            font-style: italic;
-            line-height: 1.4;
-            text-align: center;
-        `;
+        textDisplay.className = 'instagram-share-text-display';
         textDisplay.textContent = textToCopy;
         contentWrapper.appendChild(textDisplay);
     }
 
     const actions = document.createElement('div');
-    actions.style.cssText = `
-        display: flex;
-        flex-direction: column;
-        align-items: stretch;
-        gap: 1.2rem;
-        width: 100%;
-        max-width: 480px;
-        margin: 0 auto;
-    `;
+    actions.className = 'instagram-share-actions';
     modalBody.appendChild(actions);
 
     // Bouton de sauvegarde (uniquement si image)
@@ -457,7 +367,6 @@ export function openInstagramDesktopShareModal(options = {}) {
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
             <span>Sauvegarder l'image</span>
         `;
-        saveBtn.onclick = handleSaveClick;
         actions.appendChild(saveBtn);
     }
 
@@ -465,7 +374,6 @@ export function openInstagramDesktopShareModal(options = {}) {
     let copyBtn = null;
     if (enableClipboard) {
         copyBtn = document.createElement('button');
-        const isTextCopy = typeof enableClipboard === 'string';
         // Si c'est du texte (LinkedIn), on utilise le style doré (save-btn)
         copyBtn.className = isTextCopy
             ? 'instagram-share-action-btn instagram-share-save-btn'
@@ -474,7 +382,6 @@ export function openInstagramDesktopShareModal(options = {}) {
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
             <span>${isTextCopy ? "Copier le texte" : "Copier l'image"}</span>
         `;
-        copyBtn.onclick = handleCopyClick;
         actions.appendChild(copyBtn);
     }
 
@@ -486,12 +393,11 @@ export function openInstagramDesktopShareModal(options = {}) {
         openPlatformBtn.href = '#';
     } else {
         openPlatformBtn.href = openUrl;
-        if (!isMobile() && openUrl && (openUrl.startsWith('http'))) {
+        if (!mobile && openUrl && (openUrl.startsWith('http'))) {
             openPlatformBtn.target = '_blank';
             openPlatformBtn.rel = 'noopener noreferrer';
         }
     }
-    openPlatformBtn.onclick = handleOpenPlatformClick;
     actions.appendChild(openPlatformBtn);
 
     document.body.appendChild(overlay);
@@ -499,10 +405,15 @@ export function openInstagramDesktopShareModal(options = {}) {
 
     let modalClosed = false;
     let copyInProgress = false;
+    let copyResetTimerId = null;
 
     function finalizeClose() {
         if (modalClosed) return;
         modalClosed = true;
+        if (copyResetTimerId !== null) {
+            window.clearTimeout(copyResetTimerId);
+            copyResetTimerId = null;
+        }
         document.removeEventListener('keydown', handleEscape);
         overlay.removeEventListener('click', handleOverlayClick);
         closeBtn.removeEventListener('click', finalizeClose);
@@ -535,21 +446,6 @@ export function openInstagramDesktopShareModal(options = {}) {
         }
     }
 
-    function handleOpenPlatformClick(e) {
-        if (onOpenPlatform) {
-            e.preventDefault();
-            onOpenPlatform();
-        } else if (openPlatformBtn.href === '#' || !openPlatformBtn.href) {
-            e.preventDefault();
-            openShareUrlWithDeviceStrategy(
-                openUrl,
-                openPopupName,
-                openPopupWidth,
-                openPopupHeight
-            );
-        }
-    }
-
     async function resolvePngBlobForClipboard() {
         if (imageBlob) {
             return ensurePngBlob(imageBlob);
@@ -567,7 +463,6 @@ export function openInstagramDesktopShareModal(options = {}) {
     async function handleCopyClick() {
         if (!copyBtn || modalClosed || copyInProgress) return;
 
-        const isTextCopy = typeof enableClipboard === 'string';
         const defaultLabel = isTextCopy ? "Copier le texte" : "Copier l'image";
 
         copyInProgress = true;
@@ -589,12 +484,16 @@ export function openInstagramDesktopShareModal(options = {}) {
             }
 
             copyBtn.textContent = 'Copié !';
-            setTimeout(function () {
+            if (copyResetTimerId !== null) {
+                window.clearTimeout(copyResetTimerId);
+            }
+            copyResetTimerId = window.setTimeout(function () {
                 if (!modalClosed && copyBtn) {
                     copyBtn.textContent = defaultLabel;
                     copyBtn.disabled = false;
                 }
-            }, 1200);
+                copyResetTimerId = null;
+            }, MODAL_COPY_LABEL_RESET_DELAY_MS);
         } catch (error) {
             console.error('Erreur copie:', error);
             showError("Échec de la copie automatique.");
@@ -619,7 +518,11 @@ export function openInstagramDesktopShareModal(options = {}) {
         if (onOpenPlatform) {
             e.preventDefault();
             onOpenPlatform();
-        } else if (openPlatformBtn.getAttribute('href') === '#' || !openPlatformBtn.getAttribute('href')) {
+            return;
+        }
+
+        const href = openPlatformBtn.getAttribute('href');
+        if (href === '#' || !href) {
             e.preventDefault();
             openShareUrlWithDeviceStrategy(openUrl, openPopupName, openPopupWidth, openPopupHeight);
         }
@@ -710,20 +613,35 @@ export function initShareButtons() {
         return;
     }
 
-    const temporalShareSection = document.querySelector('#result-section-temporal .share-section');
-    const financialShareSection = document.querySelector('#result-section-financial .share-section');
+    const temporalResultSection = DOM.resultSectionTemporal || document.querySelector(RESULT_SECTION_TEMPORAL_SELECTOR);
+    const financialResultSection = DOM.resultSectionFinancial || document.querySelector(RESULT_SECTION_FINANCIAL_SELECTOR);
+    const temporalShareSection = DOM.shareSectionTemporal || temporalResultSection?.querySelector(SHARE_SECTION_SELECTOR);
+    const financialShareSection = DOM.shareSectionFinancial || financialResultSection?.querySelector(SHARE_SECTION_SELECTOR);
 
     if (temporalShareSection) {
-        const temporalButtons = template.content.cloneNode(true);
-        temporalShareSection.querySelector('.share-buttons').appendChild(temporalButtons);
+        const container = temporalShareSection.querySelector(SHARE_BUTTONS_CONTAINER_SELECTOR);
+        if (container && container.children.length === 0) {
+            const temporalButtons = template.content.cloneNode(true);
+            container.appendChild(temporalButtons);
+        }
     }
 
     if (financialShareSection) {
-        const financialButtons = template.content.cloneNode(true);
-        financialShareSection.querySelector('.share-buttons').appendChild(financialButtons);
+        const container = financialShareSection.querySelector(SHARE_BUTTONS_CONTAINER_SELECTOR);
+        if (container && container.children.length === 0) {
+            const financialButtons = template.content.cloneNode(true);
+            container.appendChild(financialButtons);
+        }
     }
 
-    document.addEventListener('click', handleShareClick);
+    if (!shareButtonsBound) {
+        temporalResultSection?.addEventListener('click', handleShareClick);
+        financialResultSection?.addEventListener('click', handleShareClick);
+        if (!temporalResultSection && !financialResultSection) {
+            document.addEventListener('click', handleShareClick);
+        }
+        shareButtonsBound = true;
+    }
 }
 
 /**
@@ -757,22 +675,24 @@ function handleShareClick(e) {
  */
 function extractResultFromDOM(mode) {
     if (mode === 'temporal') {
-        const temporalGrid = document.querySelector('.result-grid-temporal');
+        const temporalResultSection = DOM.resultSectionTemporal || document.querySelector(RESULT_SECTION_TEMPORAL_SELECTOR);
+        const temporalGrid = temporalResultSection?.querySelector(RESULT_GRID_TEMPORAL_SELECTOR)
+            || document.querySelector(RESULT_GRID_TEMPORAL_SELECTOR);
         if (temporalGrid) {
-            const boxes = temporalGrid.querySelectorAll('.result-box');
+            const boxes = temporalGrid.querySelectorAll(RESULT_BOX_SELECTOR);
             const parts = [];
             boxes.forEach(box => {
-                const val = box.querySelector('.value span')?.textContent || '';
-                const label = box.querySelector('.label')?.textContent || '';
+                const val = box.querySelector(RESULT_VALUE_SELECTOR)?.textContent || '';
+                const label = box.querySelector(RESULT_LABEL_SELECTOR)?.textContent || '';
                 parts.push(`${val} ${label}`);
             });
             return parts.join(' ');
         }
-        return document.getElementById('result-text-temporal')?.textContent || null;
+        return DOM.resultTextTemporal?.textContent || document.getElementById('result-text-temporal')?.textContent || null;
     } else {
-        const comparisonEl = document.getElementById('comparison-result-text-financial');
+        const comparisonEl = DOM.comparisonResultTextFinancial || document.getElementById('comparison-result-text-financial');
         const comparisonText = comparisonEl?.textContent || '';
-        return comparisonText.trim() || document.getElementById('result-text-financial')?.textContent || null;
+        return comparisonText.trim() || DOM.resultTextFinancial?.textContent || document.getElementById('result-text-financial')?.textContent || null;
     }
 }
 
@@ -796,13 +716,21 @@ function getResultText(mode) {
     return resultText?.trim() || null;
 }
 
+function getCurrentAmountValue() {
+    const amountInput = DOM.amount || document.getElementById('amount');
+    return amountInput ? parseFloat(amountInput.value.replace(NBSP_GLOBAL_REGEX, '').replace(COMMA_GLOBAL_REGEX, '.')) : 0;
+}
+
 /**
  * Copie le résultat dans le presse-papiers
  * @param {string} mode - 'temporal' ou 'financial'
  */
 export function copyResult(mode = 'temporal') {
     const message = getShareMessage(mode, true);
-    const copyBtn = document.querySelector(`#result-section-${mode} .copy-btn`);
+    const resultSection = mode === 'financial'
+        ? (DOM.resultSectionFinancial || document.querySelector(RESULT_SECTION_FINANCIAL_SELECTOR))
+        : (DOM.resultSectionTemporal || document.querySelector(RESULT_SECTION_TEMPORAL_SELECTOR));
+    const copyBtn = resultSection?.querySelector(COPY_BUTTON_SELECTOR) || document.querySelector(`#result-section-${mode} .copy-btn`);
 
     if (!copyBtn) {
         console.error("Bouton de copie introuvable");
@@ -816,10 +744,10 @@ export function copyResult(mode = 'temporal') {
     navigator.clipboard.writeText(message).then(function () {
         if (copyBtn) {
             const originalIcon = copyBtn.innerHTML;
-            copyBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>';
+            copyBtn.innerHTML = COPY_SUCCESS_ICON_SVG;
             setTimeout(function () {
                 copyBtn.innerHTML = originalIcon;
-            }, 2000);
+            }, COPY_RESULT_ICON_RESET_DELAY_MS);
         }
     }).catch(function (err) {
         console.error('Erreur lors de la copie: ', err);
@@ -840,8 +768,6 @@ function getShareMessage(mode, includeUrl = true) {
         return null;
     }
 
-    const currentUrl = SHARE_URL;
-
     let message;
     if (mode === 'temporal') {
         let description;
@@ -852,14 +778,8 @@ function getShareMessage(mode, includeUrl = true) {
             message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         } else {
             // Sinon c'est un montant personnalisé, on utilise le montant formaté
-            const amountInput = document.getElementById('amount');
-            const amountValue = amountInput ? parseFloat(amountInput.value.replace(/\u00A0/g, '').replace(/,/g, '.')) : 0;
-
-            description = new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: 'EUR',
-                maximumFractionDigits: 0
-            }).format(amountValue);
+            const amountValue = getCurrentAmountValue();
+            description = SHARE_CURRENCY_FORMATTER.format(amountValue);
 
             message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         }
@@ -871,10 +791,8 @@ function getShareMessage(mode, includeUrl = true) {
     }
 
     if (includeUrl) {
-        const displayUrl = currentUrl.replace(/^https?:\/\//, '');
         // On affiche l'URL simplifiée à la fin du message
-        message += `\nÀ vous de tester sur :\n${displayUrl}`;
-        console.log('Final message with URL:', message);
+        message += `\nÀ vous de tester sur :\n${SHARE_URL_DISPLAY}`;
     }
 
     return message;
@@ -889,6 +807,32 @@ async function generateShareImageBlob(mode) {
     const resultText = getResultText(mode);
     if (!resultText) {
         return null;
+    }
+
+    // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
+    let fullText;
+    if (mode === 'temporal') {
+        // Utiliser le label de l'exemple au lieu du montant
+        if (state.currentExampleLabel) {
+            // Capitaliser la première lettre
+            const label = state.currentExampleLabel.charAt(0).toUpperCase() + state.currentExampleLabel.slice(1);
+            fullText = `${label}\nreprésente\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
+        } else {
+            // Fallback vers le montant si pas d'exemple
+            const amountValue = getCurrentAmountValue();
+            const formattedAmount = SHARE_CURRENCY_FORMATTER.format(amountValue);
+            fullText = `${formattedAmount}\nreprésentent\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
+        }
+    } else {
+        fullText = `${resultText}\n(base + complémentaires).`;
+    }
+
+    const cacheKey = `${mode}::${fullText}`;
+    if (shareImageCacheBlob && shareImageCacheKey === cacheKey) {
+        return shareImageCacheBlob;
+    }
+    if (shareImagePendingPromise && shareImagePendingKey === cacheKey) {
+        return shareImagePendingPromise;
     }
 
     // Créer le canvas - format carré Pinterest
@@ -925,29 +869,6 @@ async function generateShareImageBlob(mode) {
     ctx.lineWidth = 2;
     ctx.stroke();
 
-    // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
-    let fullText;
-    if (mode === 'temporal') {
-        // Utiliser le label de l'exemple au lieu du montant
-        if (state.currentExampleLabel) {
-            // Capitaliser la première lettre
-            const label = state.currentExampleLabel.charAt(0).toUpperCase() + state.currentExampleLabel.slice(1);
-            fullText = `${label}\nreprésente\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
-        } else {
-            // Fallback vers le montant si pas d'exemple
-            const amountInput = document.getElementById('amount');
-            const amountValue = amountInput ? parseFloat(amountInput.value.replace(/\u00A0/g, '').replace(/,/g, '.')) : 0;
-            const formattedAmount = new Intl.NumberFormat('fr-FR', {
-                style: 'currency',
-                currency: 'EUR',
-                maximumFractionDigits: 0
-            }).format(amountValue);
-            fullText = `${formattedAmount}\nreprésentent\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
-        }
-    } else {
-        fullText = `${resultText}\n(base + complémentaires).`;
-    }
-
     // Mise en page : garantir que le texte reste au-dessus de l'icône
     const textMaxWidth = canvas.width - 120;
     const textTop = 155;
@@ -976,8 +897,20 @@ async function generateShareImageBlob(mode) {
     ctx.textBaseline = 'alphabetic';
 
     // Ajouter l'icône dans la moitié inférieure
-    return new Promise((resolve) => {
-        const iconUrl = 'https://lemodelesocialfrancais.github.io/joursderetraite/icon-512x512.png';
+    shareImagePendingKey = cacheKey;
+    shareImagePendingPromise = new Promise((resolve) => {
+        function finalizeShareImageBlob(blob) {
+            if (blob) {
+                shareImageCacheKey = cacheKey;
+                shareImageCacheBlob = blob;
+            }
+            if (shareImagePendingKey === cacheKey) {
+                shareImagePendingKey = '';
+                shareImagePendingPromise = null;
+            }
+            resolve(blob || null);
+        }
+
         const iconImg = new Image();
         iconImg.crossOrigin = 'anonymous';
         iconImg.onload = function () {
@@ -992,7 +925,7 @@ async function generateShareImageBlob(mode) {
 
             // Convertir en Blob
             canvas.toBlob((blob) => {
-                resolve(blob);
+                finalizeShareImageBlob(blob);
             }, 'image/png');
         };
         iconImg.onerror = function () {
@@ -1001,11 +934,12 @@ async function generateShareImageBlob(mode) {
             ctx.font = 'bold 32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
             ctx.fillText('lemodelesocialfrancais.github.io/joursderetraite', canvas.width / 2, 960);
             canvas.toBlob((blob) => {
-                resolve(blob);
+                finalizeShareImageBlob(blob);
             }, 'image/png');
         };
-        iconImg.src = iconUrl;
+        iconImg.src = SHARE_IMAGE_ICON_URL;
     });
+    return shareImagePendingPromise;
 }
 
 /**
@@ -1087,410 +1021,351 @@ function wrapText(ctx, text, maxWidth) {
     return lines;
 }
 
+function withAutoRevokeOnClose(previewUrl, options) {
+    const existingOnClose = options.onClose;
+    return {
+        ...options,
+        onClose: function () {
+            URL.revokeObjectURL(previewUrl);
+            if (typeof existingOnClose === 'function') {
+                existingOnClose();
+            }
+        }
+    };
+}
+
+function withGeneratedShareImage(mode, config) {
+    generateShareImageBlob(mode).then(blob => {
+        if (!blob) {
+            showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
+            return;
+        }
+
+        const previewUrl = URL.createObjectURL(blob);
+        config.onReady(blob, previewUrl);
+    }).catch(err => {
+        console.error(config.logPrefix, err);
+        showError(config.userErrorMessage);
+    });
+}
+
+function openMobileGuidedImageShareModal(previewUrl, blob, options) {
+    openInstagramDesktopShareModal(withAutoRevokeOnClose(previewUrl, {
+        imageUrl: previewUrl,
+        imageBlob: blob,
+        dragHintText: '',
+        enableClipboard: false,
+        ...options
+    }));
+}
+
+function openDesktopGeneratedImageShareModal(previewUrl, blob, openModal, options) {
+    openModal(withAutoRevokeOnClose(previewUrl, {
+        imageUrl: previewUrl,
+        imageBlob: blob,
+        ...options
+    }));
+}
+
+function openGuidedTextShareModal(options) {
+    openInstagramDesktopShareModal({
+        imageUrl: null,
+        modalTitle: options.modalTitle,
+        modalInstructions: options.modalInstructions,
+        openButtonLabel: options.openButtonLabel,
+        openUrl: options.openUrl,
+        enableClipboard: options.enableClipboard
+    });
+}
+
+function shareGeneratedImageOnMobile(mode, config) {
+    withGeneratedShareImage(mode, {
+        logPrefix: config.logPrefix,
+        userErrorMessage: config.userErrorMessage,
+        onReady: function (blob, previewUrl) {
+            openMobileGuidedImageShareModal(previewUrl, blob, {
+                filename: generateUniqueFilename(config.filenameBase, 'png'),
+                imageAlt: config.imageAlt,
+                modalTitle: config.modalTitle,
+                modalInstructions: config.modalInstructions,
+                openButtonLabel: config.openButtonLabel,
+                openUrl: config.openUrl,
+                openPopupName: config.openPopupName
+            });
+        }
+    });
+}
+
+function shareGeneratedImageOnDesktop(mode, config) {
+    withGeneratedShareImage(mode, {
+        logPrefix: config.logPrefix,
+        userErrorMessage: config.userErrorMessage,
+        onReady: function (blob, previewUrl) {
+            openDesktopGeneratedImageShareModal(previewUrl, blob, config.openModal, config.modalOptions);
+        }
+    });
+}
+
+const SHARE_PLATFORM_HANDLERS = {
+    facebook(context) {
+        openGuidedTextShareModal({
+            modalTitle: 'Partager sur Facebook',
+            modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Facebook et collez-le dans votre post.",
+            openButtonLabel: 'Ouvrir Facebook',
+            openUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(context.currentUrl)}`,
+            enableClipboard: context.getMessageWithUrl() || context.message
+        });
+        return { handled: true };
+    },
+    twitter(context) {
+        return { shareUrl: `https://twitter.com/intent/tweet?text=${encodeURIComponent(context.message)}` };
+    },
+    threads(context) {
+        return { shareUrl: `https://www.threads.net/intent/post?text=${encodeURIComponent(context.message || '')}` };
+    },
+    tumblr(context) {
+        if (context.mobile) {
+            shareGeneratedImageOnMobile(context.mode, {
+                logPrefix: 'Erreur génération image Tumblr mobile:',
+                userErrorMessage: "Impossible de préparer l'image pour Tumblr.",
+                filenameBase: 'jours-de-retraite-tumblr',
+                imageAlt: 'Image générée pour Tumblr',
+                modalTitle: 'Partager sur Tumblr',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Tumblr, créez un post Photo, puis importez l'image enregistrée.",
+                openButtonLabel: 'Ouvrir Tumblr',
+                openUrl: TUMBLR_WEB_URL,
+                openPopupName: 'tumblr-share'
+            });
+            return { handled: true };
+        }
+
+        shareGeneratedImageOnDesktop(context.mode, {
+            logPrefix: 'Erreur génération image Tumblr desktop:',
+            userErrorMessage: "Impossible de préparer l'image pour Tumblr.",
+            openModal: openTumblrDesktopShareModal,
+            modalOptions: {
+                filename: TUMBLR_DRAG_FILENAME,
+                imageAlt: 'Image générée pour Tumblr'
+            }
+        });
+        return { handled: true };
+    },
+    mastodon(context) {
+        if (context.mobile) {
+            nativeShare(context.mode);
+            return { handled: true };
+        }
+        return { shareUrl: `https://mastodonshare.com/?text=${encodeURIComponent(context.message || '')}` };
+    },
+    reddit(context) {
+        const redditTitle = context.getMessageWithUrl() || "Découvrez l'équivalent temps de cotisations de retraite";
+        return { shareUrl: `https://www.reddit.com/submit?url=${encodeURIComponent(context.currentUrl)}&title=${encodeURIComponent(redditTitle)}` };
+    },
+    bluesky(context) {
+        return { shareUrl: `https://bsky.app/intent/compose?text=${encodeURIComponent(context.message)}` };
+    },
+    discord(context) {
+        openGuidedTextShareModal({
+            modalTitle: 'Partager sur Discord',
+            modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Discord et collez votre message dans un salon ou un DM.",
+            openButtonLabel: 'Ouvrir Discord',
+            openUrl: 'https://discord.com/channels/@me',
+            enableClipboard: context.getMessageWithUrl() || context.message
+        });
+        return { handled: true };
+    },
+    linkedin(context) {
+        if (context.mobile) {
+            openGuidedTextShareModal({
+                modalTitle: 'Partager sur LinkedIn',
+                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez LinkedIn et collez-le dans votre post.",
+                openButtonLabel: 'Ouvrir LinkedIn',
+                openUrl: 'https://www.linkedin.com/feed/',
+                enableClipboard: context.message
+            });
+            return { handled: true };
+        }
+
+        const encodedMessage = encodeURIComponent(context.message);
+        return { shareUrl: `https://www.linkedin.com/feed/?shareActive=true&text=${encodedMessage}` };
+    },
+    whatsapp(context) {
+        return { shareUrl: `https://wa.me/?text=${encodeURIComponent(context.message)}` };
+    },
+    telegram(context) {
+        if (context.mobile) {
+            return { shareUrl: `tg://msg?text=${encodeURIComponent(context.message)}` };
+        }
+        return { shareUrl: `https://t.me/share/url?url=${encodeURIComponent(context.currentUrl)}&text=${encodeURIComponent(context.message)}` };
+    },
+    instagram(context) {
+        if (context.mobile) {
+            shareGeneratedImageOnMobile(context.mode, {
+                logPrefix: 'Erreur génération image Instagram mobile:',
+                userErrorMessage: "Impossible de préparer l'image pour Instagram.",
+                filenameBase: 'jours-de-retraite-instagram',
+                imageAlt: 'Image générée pour Instagram',
+                modalTitle: 'Partager sur Instagram',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
+                openButtonLabel: 'Ouvrir Instagram',
+                openUrl: INSTAGRAM_WEB_URL,
+                openPopupName: 'instagram-share'
+            });
+            return { handled: true };
+        }
+
+        shareGeneratedImageOnDesktop(context.mode, {
+            logPrefix: 'Erreur génération image Instagram desktop:',
+            userErrorMessage: "Impossible de préparer l'image pour Instagram.",
+            openModal: openInstagramDesktopShareModal,
+            modalOptions: {
+                filename: INSTAGRAM_DRAG_FILENAME,
+                imageAlt: 'Image générée pour Instagram',
+                modalTitle: 'Partager sur Instagram',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram dans la popup, cliquez sur Créer (+), puis importez l'image.",
+                dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Instagram Web.",
+                openButtonLabel: 'Ouvrir Instagram',
+                openUrl: INSTAGRAM_WEB_URL,
+                openPopupName: 'instagram-web-share',
+                openPopupWidth: 1100,
+                openPopupHeight: 820,
+                enableClipboard: false
+            }
+        });
+        return { handled: true };
+    },
+    snapchat(context) {
+        if (context.mobile) {
+            shareGeneratedImageOnMobile(context.mode, {
+                logPrefix: 'Erreur génération image Snapchat mobile:',
+                userErrorMessage: "Impossible de préparer l'image pour Snapchat.",
+                filenameBase: 'jours-de-retraite-snapchat',
+                imageAlt: 'Image générée pour Snapchat',
+                modalTitle: 'Partager sur Snapchat',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Snapchat, appuyez sur l'icône Galerie (Cartes), puis importez l'image.",
+                openButtonLabel: 'Ouvrir Snapchat',
+                openUrl: SNAPCHAT_MOBILE_URL,
+                openPopupName: 'snapchat-share'
+            });
+            return { handled: true };
+        }
+
+        shareGeneratedImageOnDesktop(context.mode, {
+            logPrefix: 'Erreur génération image Snapchat desktop:',
+            userErrorMessage: "Impossible de préparer l'image pour Snapchat.",
+            openModal: openSnapchatDesktopShareModal,
+            modalOptions: {
+                filename: SNAPCHAT_DRAG_FILENAME,
+                imageAlt: 'Image générée pour Snapchat'
+            }
+        });
+        return { handled: true };
+    },
+    tiktok(context) {
+        if (context.mobile) {
+            shareGeneratedImageOnMobile(context.mode, {
+                logPrefix: 'Erreur génération image TikTok mobile:',
+                userErrorMessage: "Impossible de préparer l'image pour TikTok.",
+                filenameBase: 'jours-de-retraite-tiktok',
+                imageAlt: 'Image générée pour TikTok',
+                modalTitle: 'Partager sur TikTok',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
+                openButtonLabel: 'Ouvrir TikTok',
+                openUrl: 'snssdk1233://camera',
+                openPopupName: 'tiktok-share'
+            });
+            return { handled: true };
+        }
+
+        shareGeneratedImageOnDesktop(context.mode, {
+            logPrefix: 'Erreur génération image TikTok desktop:',
+            userErrorMessage: "Impossible de préparer l'image pour TikTok.",
+            openModal: openTiktokDesktopShareModal,
+            modalOptions: {
+                filename: TIKTOK_DRAG_FILENAME,
+                imageAlt: 'Image générée pour TikTok'
+            }
+        });
+        return { handled: true };
+    },
+    pinterest(context) {
+        if (context.mobile) {
+            shareGeneratedImageOnMobile(context.mode, {
+                logPrefix: 'Erreur génération image Pinterest mobile:',
+                userErrorMessage: "Impossible de préparer l'image pour Pinterest.",
+                filenameBase: 'jours-de-retraite-pinterest',
+                imageAlt: 'Image générée pour Pinterest',
+                modalTitle: 'Partager sur Pinterest',
+                modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Pinterest, cliquez sur le bouton Créer (+), puis sélectionnez Épingle pour importer l'image.",
+                openButtonLabel: 'Ouvrir Pinterest',
+                openUrl: 'https://www.pinterest.com/',
+                openPopupName: 'pinterest-share'
+            });
+            return { handled: true };
+        }
+
+        openPinterestFallback(context.currentUrl, context.message);
+        return { handled: true };
+    },
+    messenger(context) {
+        if (context.mobile) {
+            openGuidedTextShareModal({
+                modalTitle: 'Partager sur Messenger',
+                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Choisissez un ami dans Messenger et collez le message.",
+                openButtonLabel: 'Ouvrir Messenger',
+                openUrl: `fb-messenger://share/?link=${encodeURIComponent(context.currentUrl)}`,
+                enableClipboard: context.getMessageWithUrl() || context.message
+            });
+            return { handled: true };
+        }
+
+        const messengerText = context.getMessageWithUrl() || context.currentUrl;
+        navigator.clipboard.writeText(messengerText).then(() => {
+            // Pas de toast ici comme convenu, le bouton s'en chargera
+        }).catch(err => {
+            console.warn("Copie Messenger desktop indisponible:", err);
+        });
+
+        openShareUrlWithDeviceStrategy('https://www.messenger.com/', 'messenger-share');
+        return { handled: true };
+    }
+};
+
 /**
  * Partage sur les réseaux sociaux
  * @param {string} platform - La plateforme cible
  */
 export function shareOnSocial(platform) {
-    // Ces plateformes reçoivent l'URL via un paramètre séparé, donc on ne l'inclut pas dans le message
-    const platformsWithUrlParam = ['facebook', 'messenger', 'reddit', 'tumblr'];
-    const platformsWithImageParam = ['pinterest'];
-    const includeUrl = !platformsWithUrlParam.includes(platform);
-    const includeImage = platformsWithImageParam.includes(platform);
-
-    const message = getShareMessage(state.currentActiveMode, includeUrl);
-    const currentUrl = SHARE_URL;
-
-    // Génère l'URL de partage pour chaque plateforme au moment de l'appel
-    let shareUrl;
-    const messageWithUrl = getShareMessage(state.currentActiveMode, true);
-    switch (platform) {
-        case 'facebook':
-            openInstagramDesktopShareModal({
-                imageUrl: null,
-                modalTitle: 'Partager sur Facebook',
-                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Facebook et collez-le dans votre post.",
-                openButtonLabel: 'Ouvrir Facebook',
-                openUrl: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}`,
-                enableClipboard: messageWithUrl || message,
-                onClose: function () {
-                    // Nettoyage si besoin
-                }
-            });
-            return;
-        case 'twitter':
-            shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(message)}`;
-            break;
-        case 'threads':
-            shareUrl = `https://www.threads.net/intent/post?text=${encodeURIComponent(message || '')}`;
-            break;
-        case 'tumblr':
-            if (isMobile()) {
-                // Mobile : modal guidé étape par étape
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openInstagramDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: generateUniqueFilename('jours-de-retraite-tumblr', 'png'),
-                        imageAlt: 'Image générée pour Tumblr',
-                        modalTitle: 'Partager sur Tumblr',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Tumblr, créez un post Photo, puis importez l'image enregistrée.",
-                        dragHintText: '',
-                        openButtonLabel: 'Ouvrir Tumblr',
-                        openUrl: TUMBLR_WEB_URL,
-                        openPopupName: 'tumblr-share',
-                        enableClipboard: false,
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image Tumblr mobile:', err);
-                    showError("Impossible de préparer l'image pour Tumblr.");
-                });
-                return;
-            }
-
-            if (isDesktop()) {
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openTumblrDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: TUMBLR_DRAG_FILENAME,
-                        imageAlt: 'Image générée pour Tumblr',
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image Tumblr desktop:', err);
-                    showError("Impossible de préparer l'image pour Tumblr.");
-                });
-                return;
-            }
-            break;
-        case 'mastodon':
-            if (!isDesktop()) {
-                nativeShare(state.currentActiveMode);
-                return;
-            }
-            shareUrl = `https://mastodonshare.com/?text=${encodeURIComponent(message || '')}`;
-            break;
-        case 'reddit':
-            const redditTitle = messageWithUrl || "Découvrez l'équivalent temps de cotisations de retraite";
-            shareUrl = `https://www.reddit.com/submit?url=${encodeURIComponent(currentUrl)}&title=${encodeURIComponent(redditTitle)}`;
-            break;
-        case 'bluesky':
-            shareUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
-            break;
-        case 'discord':
-            // Discord ne supporte pas de lien direct de partage de texte/image via URL avec remplissage.
-            // On utilise le modal guidé (Copier + Ouvrir).
-            openInstagramDesktopShareModal({
-                imageUrl: null,
-                modalTitle: 'Partager sur Discord',
-                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Discord et collez votre message dans un salon ou un DM.",
-                openButtonLabel: 'Ouvrir Discord',
-                openUrl: 'https://discord.com/channels/@me',
-                enableClipboard: messageWithUrl || message,
-                onClose: function () {
-                    // Nettoyage si besoin
-                }
-            });
-            return;
-        case 'linkedin':
-            if (isMobile()) {
-                // Mobile : modal guidé (LinkedIn app ne supporte pas bien le texte via URL)
-                openInstagramDesktopShareModal({
-                    imageUrl: null, // Pas d'image pour LinkedIn par défaut
-                    modalTitle: 'Partager sur LinkedIn',
-                    modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez LinkedIn et collez-le dans votre post.",
-                    openButtonLabel: 'Ouvrir LinkedIn',
-                    openUrl: 'https://www.linkedin.com/feed/',
-                    enableClipboard: message, // On passe le message à copier
-                    onClose: function () {
-                        // Nettoyage si besoin
-                    }
-                });
-                return;
-            }
-            console.log('LinkedIn message:', message);
-            const encodedMessage = encodeURIComponent(message);
-            console.log('Encoded message:', encodedMessage);
-            shareUrl = `https://www.linkedin.com/feed/?shareActive=true&text=${encodedMessage}`;
-            break;
-        case 'whatsapp':
-            shareUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-            break;
-        case 'telegram':
-            if (isMobile()) {
-                // Sur Mobile, le lien profond tg://msg est le seul moyen d'avoir le message 
-                // exactement comme on veut (lien à la fin) sans que Telegram ne rajoute 
-                // une copie du lien au début.
-                shareUrl = `tg://msg?text=${encodeURIComponent(message)}`;
-            } else {
-                // Sur Desktop, on utilise le lien Web classique.
-                // Note : Telegram Web (t.me) rajoutera le lien au début car le paramètre 'url' est obligatoire.
-                shareUrl = `https://t.me/share/url?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(message)}`;
-            }
-            break;
-        case 'instagram':
-            if (isMobile()) {
-                // Mobile : modal guidé étape par étape
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openInstagramDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: generateUniqueFilename('jours-de-retraite-instagram', 'png'),
-                        imageAlt: 'Image générée pour Instagram',
-                        modalTitle: 'Partager sur Instagram',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram, appuyez sur + (Nouveau post), puis importez l'image depuis votre galerie.",
-                        dragHintText: '',
-                        openButtonLabel: 'Ouvrir Instagram',
-                        openUrl: INSTAGRAM_WEB_URL,
-                        openPopupName: 'instagram-share',
-                        enableClipboard: false,
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image Instagram mobile:', err);
-                    showError("Impossible de préparer l'image pour Instagram.");
-                });
-                return;
-            }
-
-            // Desktop : modal intelligent (sauvegarde + drag & drop)
-            generateShareImageBlob(state.currentActiveMode).then(blob => {
-                if (!blob) {
-                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                    return;
-                }
-
-                const previewUrl = URL.createObjectURL(blob);
-                openInstagramDesktopShareModal({
-                    imageUrl: previewUrl,
-                    imageBlob: blob,
-                    filename: INSTAGRAM_DRAG_FILENAME,
-                    imageAlt: 'Image générée pour Instagram',
-                    modalTitle: 'Partager sur Instagram',
-                    modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Instagram dans la popup, cliquez sur Créer (+), puis importez l'image.",
-                    dragHintText: "Vous pouvez aussi glisser-déposer l'image vers Instagram Web.",
-                    openButtonLabel: 'Ouvrir Instagram',
-                    openUrl: INSTAGRAM_WEB_URL,
-                    openPopupName: 'instagram-web-share',
-                    openPopupWidth: 1100,
-                    openPopupHeight: 820,
-                    enableClipboard: false,
-                    onClose: function () {
-                        URL.revokeObjectURL(previewUrl);
-                    }
-                });
-            }).catch(err => {
-                console.error('Erreur génération image Instagram desktop:', err);
-                showError("Impossible de préparer l'image pour Instagram.");
-            });
-            return;
-        case 'snapchat':
-            if (isMobile()) {
-                // Mobile : modal guidé étape par étape
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openInstagramDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: generateUniqueFilename('jours-de-retraite-snapchat', 'png'),
-                        imageAlt: 'Image générée pour Snapchat',
-                        modalTitle: 'Partager sur Snapchat',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Snapchat, appuyez sur l'icône Galerie (Cartes), puis importez l'image.",
-                        dragHintText: '',
-                        openButtonLabel: 'Ouvrir Snapchat',
-                        openUrl: SNAPCHAT_MOBILE_URL,
-                        openPopupName: 'snapchat-share',
-                        enableClipboard: false,
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image Snapchat mobile:', err);
-                    showError("Impossible de préparer l'image pour Snapchat.");
-                });
-                return;
-            }
-
-            generateShareImageBlob(state.currentActiveMode).then(blob => {
-                if (!blob) {
-                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                    return;
-                }
-
-                const previewUrl = URL.createObjectURL(blob);
-                openSnapchatDesktopShareModal({
-                    imageUrl: previewUrl,
-                    imageBlob: blob,
-                    filename: SNAPCHAT_DRAG_FILENAME,
-                    imageAlt: 'Image générée pour Snapchat',
-                    onClose: function () {
-                        URL.revokeObjectURL(previewUrl);
-                    }
-                });
-            }).catch(err => {
-                console.error('Erreur génération image Snapchat desktop:', err);
-                showError("Impossible de préparer l'image pour Snapchat.");
-            });
-            return;
-        case 'tiktok':
-            if (isMobile()) {
-                // Mobile : modal guidé étape par étape
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openInstagramDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: generateUniqueFilename('jours-de-retraite-tiktok', 'png'),
-                        imageAlt: 'Image générée pour TikTok',
-                        modalTitle: 'Partager sur TikTok',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez TikTok, appuyez sur +, puis importez l'image depuis votre galerie.",
-                        dragHintText: '',
-                        openButtonLabel: 'Ouvrir TikTok',
-                        openUrl: 'snssdk1233://camera',
-                        openPopupName: 'tiktok-share',
-                        enableClipboard: false,
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image TikTok mobile:', err);
-                    showError("Impossible de préparer l'image pour TikTok.");
-                });
-                return;
-            }
-
-            generateShareImageBlob(state.currentActiveMode).then(blob => {
-                if (!blob) {
-                    showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                    return;
-                }
-
-                const previewUrl = URL.createObjectURL(blob);
-                openTiktokDesktopShareModal({
-                    imageUrl: previewUrl,
-                    imageBlob: blob,
-                    filename: TIKTOK_DRAG_FILENAME,
-                    imageAlt: 'Image générée pour TikTok',
-                    onClose: function () {
-                        URL.revokeObjectURL(previewUrl);
-                    }
-                });
-            }).catch(err => {
-                console.error('Erreur génération image TikTok desktop:', err);
-                showError("Impossible de préparer l'image pour TikTok.");
-            });
-            return;
-        case 'pinterest':
-            if (isMobile()) {
-                // Mobile : modal guidé étape par étape (remplace l'API Web Share moins esthétique)
-                generateShareImageBlob(state.currentActiveMode).then(blob => {
-                    if (!blob) {
-                        showWarning("Veuillez d'abord effectuer un calcul avant de partager.");
-                        return;
-                    }
-
-                    const previewUrl = URL.createObjectURL(blob);
-                    openInstagramDesktopShareModal({
-                        imageUrl: previewUrl,
-                        imageBlob: blob,
-                        filename: generateUniqueFilename('jours-de-retraite-pinterest', 'png'),
-                        imageAlt: 'Image générée pour Pinterest',
-                        modalTitle: 'Partager sur Pinterest',
-                        modalInstructions: "Étape 1 : Sauvegardez l'image.\nÉtape 2 : Ouvrez Pinterest, cliquez sur le bouton Créer (+), puis sélectionnez Épingle pour importer l'image.",
-                        dragHintText: '',
-                        openButtonLabel: 'Ouvrir Pinterest',
-                        openUrl: 'https://www.pinterest.com/', // URL de base ou builder si possible
-                        openPopupName: 'pinterest-share',
-                        enableClipboard: false,
-                        onClose: function () {
-                            URL.revokeObjectURL(previewUrl);
-                        }
-                    });
-                }).catch(err => {
-                    console.error('Erreur génération image Pinterest mobile:', err);
-                    showError("Impossible de préparer l'image pour Pinterest.");
-                });
-                return;
-            }
-
-            // Desktop ou fallback : utiliser Pinterest classique
-            openPinterestFallback(currentUrl, message);
-            return;
-        case 'messenger':
-            if (isMobile()) {
-                // Mobile : modal guidé (Messenger app ne supporte pas bien le texte via URL)
-                openInstagramDesktopShareModal({
-                    imageUrl: null,
-                    modalTitle: 'Partager sur Messenger',
-                    modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Choisissez un ami dans Messenger et collez le message.",
-                    openButtonLabel: 'Ouvrir Messenger',
-                    openUrl: `fb-messenger://share/?link=${encodeURIComponent(currentUrl)}`,
-                    enableClipboard: messageWithUrl || message,
-                    onClose: function () {
-                        // Nettoyage si besoin
-                    }
-                });
-                return;
-            }
-
-            if (isDesktop()) {
-                const messengerText = getShareMessage(state.currentActiveMode, true) || currentUrl;
-
-                navigator.clipboard.writeText(messengerText).then(() => {
-                    // Pas de toast ici comme convenu, le bouton s'en chargera
-                }).catch(err => {
-                    console.warn("Copie Messenger desktop indisponible:", err);
-                });
-
-                openShareUrlWithDeviceStrategy('https://www.messenger.com/', 'messenger-share');
-                return;
-            }
-            break;
-        default:
-            shareUrl = null;
+    const mode = state.currentActiveMode;
+    const mobile = isMobile();
+    const includeUrl = !PLATFORMS_WITH_URL_PARAM.has(platform);
+    const message = getShareMessage(mode, includeUrl);
+    let messageWithUrl;
+    function getMessageWithUrl() {
+        if (messageWithUrl === undefined) {
+            messageWithUrl = getShareMessage(mode, true);
+        }
+        return messageWithUrl;
     }
 
-    if (shareUrl) {
+    const currentUrl = SHARE_URL;
+    const context = {
+        mode,
+        mobile,
+        message,
+        currentUrl,
+        getMessageWithUrl
+    };
+    const handler = SHARE_PLATFORM_HANDLERS[platform];
+    const action = typeof handler === 'function' ? handler(context) : null;
+
+    if (action?.handled) {
+        return;
+    }
+
+    if (action?.shareUrl) {
         openShareUrlWithDeviceStrategy(
-            shareUrl,
+            action.shareUrl,
             `${platform || 'social'}-share`
         );
         return;
@@ -1498,7 +1373,7 @@ export function shareOnSocial(platform) {
 
     // Plateformes "récalcitrantes" (pas d'URL de partage de texte brut simple)
     // On essaie l'API native si disponible sur mobile
-    if (navigator.share && !isDesktop()) {
+    if (navigator.share && mobile) {
         navigator.share({
             title: "Perspective Retraites",
             text: message
@@ -1620,14 +1495,18 @@ export function nativeShare(mode = 'temporal') {
  */
 function showShareHelperPopup(text) {
     // Supprimer la popup existante si elle existe
-    const existingPopup = document.getElementById('share-helper-popup');
+    const existingPopup = document.getElementById(SHARE_HELPER_POPUP_ID);
     if (existingPopup) {
         existingPopup.remove();
+    }
+    const existingOverlay = document.getElementById(SHARE_HELPER_OVERLAY_ID);
+    if (existingOverlay) {
+        existingOverlay.remove();
     }
 
     // Créer la popup avec le thème du site (bleu marine et doré)
     const popup = document.createElement('div');
-    popup.id = 'share-helper-popup';
+    popup.id = SHARE_HELPER_POPUP_ID;
     popup.style.cssText = `
         position: fixed;
         top: 50%;
@@ -1693,7 +1572,7 @@ function showShareHelperPopup(text) {
 
     // Créer l'overlay
     const overlay = document.createElement('div');
-    overlay.id = 'share-helper-overlay';
+    overlay.id = SHARE_HELPER_OVERLAY_ID;
     overlay.style.cssText = `
         position: fixed;
         top: 0;
@@ -1708,7 +1587,7 @@ function showShareHelperPopup(text) {
     document.body.appendChild(popup);
 
     // Focus sur le textarea (sans sélectionner le texte pour plus d'esthétique)
-    const textarea = document.getElementById('share-helper-text');
+    const textarea = popup.querySelector('#share-helper-text');
 
     // Ajuster la hauteur automatiquement au contenu
     textarea.style.height = 'auto';
@@ -1717,13 +1596,24 @@ function showShareHelperPopup(text) {
     textarea.focus();
 
     // Gestionnaires d'événements
+    let escapeHandler = null;
+    let copyResetTimerId = null;
+
     const closePopup = () => {
+        if (copyResetTimerId !== null) {
+            window.clearTimeout(copyResetTimerId);
+            copyResetTimerId = null;
+        }
         popup.remove();
         overlay.remove();
+        if (escapeHandler) {
+            document.removeEventListener('keydown', escapeHandler);
+            escapeHandler = null;
+        }
     };
 
-    const closeBtn = document.getElementById('share-helper-close');
-    const copyBtn = document.getElementById('share-helper-copy');
+    const closeBtn = popup.querySelector('#share-helper-close');
+    const copyBtn = popup.querySelector('#share-helper-copy');
 
     // Effets de survol pour le bouton Fermer
     closeBtn.addEventListener('mouseenter', () => {
@@ -1764,9 +1654,13 @@ function showShareHelperPopup(text) {
             const originalText = copyBtn.textContent;
             copyBtn.textContent = '✓ Copié !';
             // Garder la couleur dorée du bouton, ne pas changer en vert
-            setTimeout(() => {
+            if (copyResetTimerId !== null) {
+                window.clearTimeout(copyResetTimerId);
+            }
+            copyResetTimerId = window.setTimeout(() => {
                 copyBtn.textContent = originalText;
-            }, 5000);
+                copyResetTimerId = null;
+            }, SHARE_HELPER_COPY_LABEL_RESET_DELAY_MS);
         }).catch(err => {
             console.error('Erreur copie:', err);
             showError("Erreur lors de la copie. Veuillez sélectionner et copier manuellement.");
@@ -1774,10 +1668,9 @@ function showShareHelperPopup(text) {
     });
 
     // Fermer avec Escape
-    const escapeHandler = (e) => {
+    escapeHandler = (e) => {
         if (e.key === 'Escape') {
             closePopup();
-            document.removeEventListener('keydown', escapeHandler);
         }
     };
     document.addEventListener('keydown', escapeHandler);

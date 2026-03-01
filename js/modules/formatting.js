@@ -10,6 +10,31 @@ const CURRENCY_FORMATTER = new Intl.NumberFormat('fr-FR', {
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
 });
+const BLUR_NUMBER_FORMATTER = new Intl.NumberFormat('fr-FR', {
+    maximumFractionDigits: 10
+});
+const NBSP = '\u00A0';
+const RE_NBSP = /\u00A0/g;
+const RE_INVALID_CHARS = /[^\d.,]/g;
+const RE_ANY_SPACE = /\s/g;
+const RE_COMMA = /,/g;
+const RE_GROUP_THOUSANDS = /\B(?=(\d{3})+(?!\d))/g;
+const DAYS_IN_YEAR = 365.25;
+
+function getTotalThousandsSeparators(integerLength) {
+    return integerLength > 3 ? Math.floor((integerLength - 1) / 3) : 0;
+}
+
+function countThousandsSeparatorsBeforeCursor(cursorPos, integerLength) {
+    if (cursorPos <= 0 || integerLength <= 3) return 0;
+
+    const totalSeparators = getTotalThousandsSeparators(integerLength);
+    const cappedCursorPos = Math.min(cursorPos, integerLength);
+    const separatorsAtOrAfterCursor = Math.floor((integerLength - cappedCursorPos) / 3);
+    const separatorsBeforeCursor = totalSeparators - separatorsAtOrAfterCursor;
+
+    return separatorsBeforeCursor > 0 ? separatorsBeforeCursor : 0;
+}
 
 /**
  * Formate les nombres avec des espaces insécables pour séparer les milliers
@@ -21,15 +46,13 @@ export function formatNumberInput(input) {
     const end = input.selectionEnd;
 
     // Récupérer la valeur actuelle et supprimer les espaces insécables pour le traitement
-    let originalValue = input.value.replace(/\u00A0/g, '');
+    let originalValue = input.value.replace(RE_NBSP, '');
 
-    // Si la valeur contient autre chose que des chiffres, un point ou une virgule, ne rien faire
-    if (!/^[0-9.,\b]*$/.test(originalValue)) {
-        originalValue = originalValue.replace(/[^\d.,]/g, '');
-    }
+    // Nettoyage: conserver uniquement chiffres, point et virgule
+    originalValue = originalValue.replace(RE_INVALID_CHARS, '');
 
     // Remplacer les virgules par des points pour le traitement
-    originalValue = originalValue.replace(/,/g, '.');
+    originalValue = originalValue.replace(RE_COMMA, '.');
 
     // Empêcher plus d'un point décimal
     const decimalPoints = originalValue.split('.');
@@ -43,7 +66,7 @@ export function formatNumberInput(input) {
     const decimalPart = parts[1] ? '.' + parts[1] : '';
 
     // Formater la partie entière avec des espaces insécables
-    const formattedInteger = integerPart.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+    const formattedInteger = integerPart.replace(RE_GROUP_THOUSANDS, NBSP);
 
     // Mettre à jour la valeur du champ
     const newValue = formattedInteger + decimalPart;
@@ -55,37 +78,20 @@ export function formatNumberInput(input) {
         // Calculate the new cursor position after formatting
         let newStart = start;
         let newEnd = end;
+        const integerLength = integerPart.length;
+        const totalSpaces = getTotalThousandsSeparators(integerLength);
 
         // Count spaces in the integer part up to the cursor position
-        if (start <= integerPart.length) {
-            const digitsBeforeCursor = integerPart.substring(0, start);
-            let spacesAdded = 0;
-            for (let i = 0; i < digitsBeforeCursor.length; i++) {
-                const digitsToRight = integerPart.length - i;
-                if ((digitsToRight % 3 === 0) && (digitsToRight < integerPart.length)) {
-                    spacesAdded++;
-                }
-            }
-            newStart = start + spacesAdded;
+        if (start <= integerLength) {
+            newStart = start + countThousandsSeparatorsBeforeCursor(start, integerLength);
         } else {
-            const totalDigits = integerPart.length;
-            const totalSpaces = totalDigits > 3 ? Math.floor((totalDigits - 1) / 3) : 0;
             newStart = start + totalSpaces;
         }
 
         // Same calculation for end position
-        if (end <= integerPart.length) {
-            let spacesAdded = 0;
-            for (let i = 0; i < integerPart.substring(0, end).length; i++) {
-                const digitsToRight = integerPart.length - i;
-                if ((digitsToRight % 3 === 0) && (digitsToRight < integerPart.length)) {
-                    spacesAdded++;
-                }
-            }
-            newEnd = end + spacesAdded;
+        if (end <= integerLength) {
+            newEnd = end + countThousandsSeparatorsBeforeCursor(end, integerLength);
         } else {
-            const totalDigits = integerPart.length;
-            const totalSpaces = totalDigits > 3 ? Math.floor((totalDigits - 1) / 3) : 0;
             newEnd = end + totalSpaces;
         }
 
@@ -108,10 +114,10 @@ export function extractNumber(value) {
     value = String(value);
 
     // Remplacer les espaces insécables par des espaces normaux, puis supprimer tous les espaces
-    value = value.replace(/\u00A0/g, ' ').replace(/\s/g, '');
+    value = value.replace(RE_NBSP, ' ').replace(RE_ANY_SPACE, '');
 
     // Remplacer les virgules par des points
-    value = value.replace(/,/g, '.');
+    value = value.replace(RE_COMMA, '.');
 
     // Extraire le nombre
     const result = parseFloat(value);
@@ -125,7 +131,10 @@ export function extractNumber(value) {
  * @param {HTMLInputElement} input - Le champ de saisie
  */
 export function allowOnlyNumbersAndComma(input) {
-    input.value = input.value.replace(/[^\d.,\u00A0]/g, '');
+    const cleaned = input.value.replace(/[^\d.,\u00A0]/g, '');
+    if (cleaned !== input.value) {
+        input.value = cleaned;
+    }
 }
 
 /**
@@ -136,11 +145,11 @@ export function formatNumberOnBlur(input) {
     const numericValue = extractNumber(input.value);
 
     if (!isNaN(numericValue) && numericValue >= 0) {
-        const formattedValue = numericValue.toLocaleString('fr-FR', {
-            maximumFractionDigits: 10
-        }).replace(/\s/g, '\u00A0');
+        const formattedValue = BLUR_NUMBER_FORMATTER.format(numericValue).replace(RE_ANY_SPACE, NBSP);
 
-        input.value = formattedValue;
+        if (input.value !== formattedValue) {
+            input.value = formattedValue;
+        }
     }
 }
 
@@ -167,9 +176,9 @@ export function getPeriodText(multiplier) {
     if (Math.abs(multiplier - 0.01) < 0.001) return "1 jour";
 
     // Pour les valeurs personnalisées
-    const days = multiplier * 365.25;
+    const days = multiplier * DAYS_IN_YEAR;
     if (days >= 365) {
-        const years = Math.floor(days / 365.25);
+        const years = Math.floor(days / DAYS_IN_YEAR);
         return `${years} an${years > 1 ? 's' : ''}`;
     } else if (days >= 30) {
         const months = Math.floor(days / 30.44);

@@ -5,14 +5,48 @@
 
 import { state } from './state.js';
 
+const OFFLINE_BANNER_ID = 'offline-banner';
+const PWA_SNACKBAR_ID = 'pwa-snackbar';
+const ANDROID_UA_REGEX = /Android/i;
+const STANDALONE_DISPLAY_MEDIA = '(display-mode: standalone)';
+const INSTALL_PROGRESS_DURATION_MS = 5000;
+const INSTALL_PROGRESS_UPDATE_MS = 50;
+const INSTALL_MODAL_CLOSE_DELAY_MS = 500;
+const SNACKBAR_SHOW_DELAY_MS = 100;
+
+const standaloneModeQuery = window.matchMedia(STANDALONE_DISPLAY_MEDIA);
+
+let offlineBannerRef = null;
+let snackbarRef = null;
+let snackbarShowTimeoutId = null;
+
+function getOfflineBanner() {
+    if (offlineBannerRef?.isConnected) return offlineBannerRef;
+    offlineBannerRef = document.getElementById(OFFLINE_BANNER_ID);
+    return offlineBannerRef;
+}
+
+function getSnackbar() {
+    if (snackbarRef?.isConnected) return snackbarRef;
+    snackbarRef = document.getElementById(PWA_SNACKBAR_ID);
+    return snackbarRef;
+}
+
+function hideInstallCta() {
+    const snackbar = getSnackbar();
+    if (snackbar) {
+        snackbar.classList.remove('show');
+    }
+}
+
 /**
  * Affiche un indicateur de mode hors ligne
  */
 export function showOfflineIndicator() {
-    let offlineBanner = document.getElementById('offline-banner');
+    let offlineBanner = getOfflineBanner();
     if (!offlineBanner) {
         offlineBanner = document.createElement('div');
-        offlineBanner.id = 'offline-banner';
+        offlineBanner.id = OFFLINE_BANNER_ID;
         offlineBanner.style.cssText = `
             position: fixed;
             top: 0;
@@ -28,6 +62,7 @@ export function showOfflineIndicator() {
         `;
         offlineBanner.innerHTML = "Mode hors ligne - L'application est entièrement fonctionnelle";
         document.body.appendChild(offlineBanner);
+        offlineBannerRef = offlineBanner;
     } else {
         offlineBanner.style.display = 'block';
     }
@@ -37,7 +72,7 @@ export function showOfflineIndicator() {
  * Cache l'indicateur de mode hors ligne
  */
 export function hideOfflineIndicator() {
-    const offlineBanner = document.getElementById('offline-banner');
+    const offlineBanner = getOfflineBanner();
     if (offlineBanner) {
         offlineBanner.style.display = 'none';
     }
@@ -47,7 +82,7 @@ export function hideOfflineIndicator() {
  * Détecte si l'utilisateur est sur Android
  */
 function isAndroid() {
-    return /Android/i.test(navigator.userAgent);
+    return ANDROID_UA_REGEX.test(navigator.userAgent);
 }
 
 /**
@@ -135,8 +170,8 @@ function showAndroidInstallModal() {
 
     // Animation de la barre de progression sur 5 secondes
     let progress = 0;
-    const duration = 5000; // 5 secondes
-    const interval = 50; // mise à jour toutes les 50ms pour plus de fluidité
+    const duration = INSTALL_PROGRESS_DURATION_MS; // 5 secondes
+    const interval = INSTALL_PROGRESS_UPDATE_MS; // mise à jour toutes les 50ms pour plus de fluidité
     const increment = 100 / (duration / interval);
 
     const progressInterval = setInterval(() => {
@@ -147,16 +182,14 @@ function showAndroidInstallModal() {
             
             // Fermer le modal automatiquement à la fin
             setTimeout(() => {
-                const modalElement = document.getElementById('android-install-modal');
-                if (modalElement) {
-                    modalElement.remove();
+                if (modal.isConnected) {
+                    modal.remove();
                 }
-            }, 500);
+            }, INSTALL_MODAL_CLOSE_DELAY_MS);
         }
         
-        const bar = document.getElementById('install-progress-bar');
-        if (bar) {
-            bar.style.width = progress + '%';
+        if (progressBar.isConnected) {
+            progressBar.style.width = `${progress}%`;
         }
     }, interval);
 }
@@ -165,37 +198,27 @@ function showAndroidInstallModal() {
  * Déclenche l'invite d'installation
  */
 export function promptInstall() {
-    if (state.deferredPrompt) {
-        // Afficher le modal de chargement sur Android
-        if (isAndroid()) {
-            showAndroidInstallModal();
-        }
+    const deferredPrompt = state.deferredPrompt;
+    if (!deferredPrompt) return;
 
-        state.deferredPrompt.prompt();
-
-        state.deferredPrompt.userChoice.then((choiceResult) => {
-
-
-            const installBtn = document.getElementById('install-btn');
-            const snackbar = document.getElementById('pwa-snackbar');
-
-            if (installBtn) {
-                installBtn.style.display = 'none';
-            }
-            if (snackbar) {
-                snackbar.classList.remove('show');
-            }
-
-            state.deferredPrompt = null;
-        });
+    // Afficher le modal de chargement sur Android
+    if (isAndroid()) {
+        showAndroidInstallModal();
     }
+
+    deferredPrompt.prompt();
+
+    deferredPrompt.userChoice.then(() => {
+        hideInstallCta();
+        state.deferredPrompt = null;
+    });
 }
 
 /**
  * Ferme la snackbar
  */
 export function dismissSnackbar() {
-    const snackbar = document.getElementById('pwa-snackbar');
+    const snackbar = getSnackbar();
     if (snackbar) {
         snackbar.classList.remove('show');
         state.snackbarDismissed = true;
@@ -208,7 +231,7 @@ export function dismissSnackbar() {
  */
 export function showPWASnackbar() {
     // Ne pas afficher si l'app est déjà installée
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (standaloneModeQuery.matches) {
         return;
     }
 
@@ -222,13 +245,16 @@ export function showPWASnackbar() {
         return;
     }
 
-    const snackbar = document.getElementById('pwa-snackbar');
+    const snackbar = getSnackbar();
 
     if (snackbar) {
         snackbar.classList.remove('hidden');
-        setTimeout(() => {
-            snackbar.classList.add('show');
-        }, 100);
+        if (!snackbar.classList.contains('show') && snackbarShowTimeoutId === null) {
+            snackbarShowTimeoutId = setTimeout(() => {
+                snackbar.classList.add('show');
+                snackbarShowTimeoutId = null;
+            }, SNACKBAR_SHOW_DELAY_MS);
+        }
     }
 }
 

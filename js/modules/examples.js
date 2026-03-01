@@ -99,16 +99,24 @@ let remainingExampleIndices = [];
  * Évite de rejouer immédiatement le dernier exemple au changement de cycle.
  */
 function refillRemainingExampleIndices() {
-    remainingExampleIndices = examples.map((_, index) => index);
+    const totalExamples = examples.length;
+    const shouldSkipLast = lastIndex >= 0 && totalExamples > 1;
+    const targetLength = shouldSkipLast ? totalExamples - 1 : totalExamples;
 
-    if (lastIndex >= 0 && examples.length > 1) {
-        remainingExampleIndices = remainingExampleIndices.filter(index => index !== lastIndex);
+    remainingExampleIndices = new Array(targetLength);
+    let writeIndex = 0;
+
+    for (let index = 0; index < totalExamples; index++) {
+        if (shouldSkipLast && index === lastIndex) continue;
+        remainingExampleIndices[writeIndex++] = index;
     }
 
     // Fisher-Yates shuffle
     for (let i = remainingExampleIndices.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [remainingExampleIndices[i], remainingExampleIndices[j]] = [remainingExampleIndices[j], remainingExampleIndices[i]];
+        const current = remainingExampleIndices[i];
+        remainingExampleIndices[i] = remainingExampleIndices[j];
+        remainingExampleIndices[j] = current;
     }
 }
 
@@ -117,7 +125,9 @@ function refillRemainingExampleIndices() {
  * @returns {Object} Un objet exemple avec value et label
  */
 export function getRandomExample() {
-    if (examples.length <= 1) {
+    const totalExamples = examples.length;
+
+    if (totalExamples <= 1) {
         lastIndex = 0;
         return examples[0];
     }
@@ -138,7 +148,7 @@ export function getRandomExample() {
  */
 export function updateExampleValueById(id, value) {
     if (!id) return;
-    const entry = examples.find(ex => ex.id === id);
+    const entry = examplesMap.get(id);
     if (!entry) return;
     if (typeof value === 'number' && isFinite(value)) {
         entry.value = value;

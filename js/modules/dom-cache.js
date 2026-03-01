@@ -37,35 +37,46 @@ export const DOM = {
     financialModeBtn: null
 };
 
+const ID_MAPPINGS = [
+    ['amount', 'amount'],
+    ['temporalInputs', 'temporal-inputs'],
+    ['resultTextTemporal', 'result-text-temporal'],
+    ['resultSectionTemporal', 'result-section-temporal'],
+    ['financialInputs', 'financial-inputs'],
+    ['objectTypeSelect', 'object-type'],
+    ['objectPriceInput', 'object-price'],
+    ['timePeriodSelect', 'time-period'],
+    ['customPeriod', 'custom-period'],
+    ['customPeriodContainer', 'custom-period-container'],
+    ['resultTextFinancial', 'result-text-financial'],
+    ['resultSectionFinancial', 'result-section-financial'],
+    ['comparisonResultTextFinancial', 'comparison-result-text-financial'],
+    ['objectTypeOptions', 'object-type-options'],
+    ['objectTypeTrigger', 'object-type-trigger'],
+    ['objectTypeDropdown', 'object-type-dropdown'],
+    ['currentExample', 'current-example'],
+    ['temporalModeBtn', 'temporal-mode-btn'],
+    ['financialModeBtn', 'financial-mode-btn']
+];
+
+const SELECTOR_MAPPINGS = [
+    ['modeToggle', '.mode-toggle'],
+    ['modesContainer', '.modes-container']
+];
+
 export function initDOMCache() {
-    // Mode temporel
-    DOM.amount = document.getElementById('amount');
-    DOM.temporalInputs = document.getElementById('temporal-inputs');
-    DOM.resultTextTemporal = document.getElementById('result-text-temporal');
-    DOM.resultSectionTemporal = document.getElementById('result-section-temporal');
-    DOM.shareSectionTemporal = DOM.resultSectionTemporal?.querySelector('.share-section');
-    
-    // Mode financier
-    DOM.financialInputs = document.getElementById('financial-inputs');
-    DOM.objectTypeSelect = document.getElementById('object-type');
-    DOM.objectPriceInput = document.getElementById('object-price');
-    DOM.timePeriodSelect = document.getElementById('time-period');
-    DOM.customPeriod = document.getElementById('custom-period');
-    DOM.customPeriodContainer = document.getElementById('custom-period-container');
-    DOM.resultTextFinancial = document.getElementById('result-text-financial');
-    DOM.resultSectionFinancial = document.getElementById('result-section-financial');
-    DOM.shareSectionFinancial = DOM.resultSectionFinancial?.querySelector('.share-section');
-    DOM.comparisonResultTextFinancial = document.getElementById('comparison-result-text-financial');
-    
-    // Dropdowns
-    DOM.objectTypeOptions = document.getElementById('object-type-options');
-    DOM.objectTypeTrigger = document.getElementById('object-type-trigger');
-    DOM.objectTypeDropdown = document.getElementById('object-type-dropdown');
-    
-    // UI générale
-    DOM.currentExample = document.getElementById('current-example');
-    DOM.modeToggle = document.querySelector('.mode-toggle');
-    DOM.modesContainer = document.querySelector('.modes-container');
-    DOM.temporalModeBtn = document.getElementById('temporal-mode-btn');
-    DOM.financialModeBtn = document.getElementById('financial-mode-btn');
+    const doc = document;
+
+    for (let i = 0; i < ID_MAPPINGS.length; i++) {
+        const mapping = ID_MAPPINGS[i];
+        DOM[mapping[0]] = doc.getElementById(mapping[1]);
+    }
+
+    for (let i = 0; i < SELECTOR_MAPPINGS.length; i++) {
+        const mapping = SELECTOR_MAPPINGS[i];
+        DOM[mapping[0]] = doc.querySelector(mapping[1]);
+    }
+
+    DOM.shareSectionTemporal = DOM.resultSectionTemporal?.querySelector('.share-section') || null;
+    DOM.shareSectionFinancial = DOM.resultSectionFinancial?.querySelector('.share-section') || null;
 }

@@ -17,6 +17,11 @@ const SECONDS_IN_HOUR = 60 * 60;
 const SECONDS_IN_MINUTE = 60;
 const SECONDS_IN_MONTH = (365.25 / 12) * SECONDS_IN_DAY;
 const CALCULATION_COUNT_PERSIST_DELAY_MS = 400;
+const NBSP_REGEX = /\s/g;
+const NBSP = '\u00A0';
+const FINANCIAL_HEADER_HTML = 'Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:';
+const FINANCIAL_SIMPLE_PREFIX = 'Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ';
+const FIELD_ERROR_DURATION_MS = 2000;
 
 let __persistCalculationCountTimer = null;
 
@@ -64,6 +69,52 @@ function escapeHTML(value) {
         '"': '&quot;',
         "'": '&#39;'
     }[ch]));
+}
+
+function formatOneDecimalFrTrim(value) {
+    const formatted = value.toFixed(1).replace('.', ',');
+    return formatted.endsWith(',0') ? formatted.slice(0, -2) : formatted;
+}
+
+function formatObjectCount(numberOfObjects) {
+    let formattedNumber;
+    let isPercentage = false;
+
+    if (numberOfObjects >= 1e9) {
+        const valueInBillions = numberOfObjects / 1e9;
+        const raw = formatOneDecimalFrTrim(valueInBillions);
+        formattedNumber = raw + (valueInBillions < 2 ? ' milliard' : ' milliards');
+    } else if (numberOfObjects >= 1e6) {
+        const valueInMillions = numberOfObjects / 1e6;
+        const raw = formatOneDecimalFrTrim(valueInMillions);
+        formattedNumber = raw + (valueInMillions < 2 ? ' million' : ' millions');
+    } else if (numberOfObjects >= 1e3) {
+        // Formatage avec espaces insécables pour les milliers (ex: "1 500" au lieu de "1,5 mille")
+        formattedNumber = Math.floor(numberOfObjects).toLocaleString('fr-FR').replace(NBSP_REGEX, NBSP);
+    } else if (numberOfObjects >= 1) {
+        if (numberOfObjects % 1 !== 0) {
+            formattedNumber = formatOneDecimalFrTrim(numberOfObjects);
+        } else {
+            formattedNumber = Math.floor(numberOfObjects).toLocaleString();
+        }
+    } else {
+        const percentage = numberOfObjects * 100;
+        isPercentage = true;
+
+        if (percentage >= 10) {
+            formattedNumber = formatOneDecimalFrTrim(percentage) + '%';
+        } else if (percentage >= 1) {
+            formattedNumber = percentage.toFixed(1).replace('.', ',') + '%';
+        } else if (percentage >= 0.1) {
+            formattedNumber = percentage.toFixed(2).replace('.', ',') + '%';
+        } else if (percentage >= 0.001) {
+            formattedNumber = percentage.toFixed(3).replace('.', ',') + '%';
+        } else {
+            formattedNumber = '< 0,001%';
+        }
+    }
+
+    return { formattedNumber, isPercentage };
 }
 
 /**
@@ -132,8 +183,8 @@ export function calculateLogic() {
     const equivalentSeconds = ratio * SECONDS_IN_YEAR;
 
     // Calcul des années
-    const years = Math.floor(equivalentSeconds / (365.25 * SECONDS_IN_DAY));
-    let remainingSeconds = equivalentSeconds % (365.25 * SECONDS_IN_DAY);
+    const years = Math.floor(equivalentSeconds / SECONDS_IN_YEAR);
+    let remainingSeconds = equivalentSeconds % SECONDS_IN_YEAR;
 
     // Calcul des mois
     const months = Math.floor(remainingSeconds / SECONDS_IN_MONTH);
@@ -188,12 +239,13 @@ export function calculateLogic() {
 
     if (state.currentExampleLabel) {
         const label = state.currentExampleLabel;
+        const labelLower = label.toLowerCase();
 
         // On capitalise la première lettre pour le début de phrase
-        let capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+        const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
 
         // Détection du pluriel pour l'accord du verbe
-        const isPlural = label.toLowerCase().startsWith('les ') || label.toLowerCase().startsWith('des ');
+        const isPlural = labelLower.startsWith('les ') || labelLower.startsWith('des ');
         const verb = isPlural ? "représentent" : "représente";
 
         // On utilise directement le label car il est déjà narratif
@@ -280,15 +332,16 @@ export function calculateComparison() {
     if (openDropdown) {
         openDropdown.classList.remove('open');
     }
-    
+
+    const dropdown = DOM.objectTypeDropdown || document.getElementById('object-type-dropdown');
+
     // Vérifier si l'utilisateur a sélectionné un objet
-    const triggerText = document.querySelector('#object-type-dropdown .trigger-text');
+    const triggerText = dropdown?.querySelector('.trigger-text');
     if (triggerText && triggerText.textContent.includes('Sélectionnez')) {
         showError("Veuillez sélectionner un objet dans la liste.");
-        const dropdown = document.getElementById('object-type-dropdown');
         if (dropdown) {
             dropdown.classList.add('field-error');
-            setTimeout(() => dropdown.classList.remove('field-error'), 2000);
+            setTimeout(() => dropdown.classList.remove('field-error'), FIELD_ERROR_DURATION_MS);
         }
         return;
     }
@@ -349,56 +402,9 @@ export function calculateComparison() {
     const numberOfObjects = periodAmount / objectPrice;
 
     // Formatage du résultat
-    let formattedNumber;
-    let rawNumberFormatted;
-    let isPercentage = false;
-
-    if (numberOfObjects >= 1e9) {
-        const valueInBillions = numberOfObjects / 1e9;
-        rawNumberFormatted = valueInBillions.toFixed(1).replace('.', ',');
-        if (rawNumberFormatted.endsWith(',0')) {
-            rawNumberFormatted = rawNumberFormatted.slice(0, -2);
-        }
-        formattedNumber = rawNumberFormatted + (valueInBillions < 2 ? ' milliard' : ' milliards');
-    } else if (numberOfObjects >= 1e6) {
-        const valueInMillions = numberOfObjects / 1e6;
-        rawNumberFormatted = valueInMillions.toFixed(1).replace('.', ',');
-        if (rawNumberFormatted.endsWith(',0')) {
-            rawNumberFormatted = rawNumberFormatted.slice(0, -2);
-        }
-        formattedNumber = rawNumberFormatted + (valueInMillions < 2 ? ' million' : ' millions');
-    } else if (numberOfObjects >= 1e3) {
-        // Formatage avec espaces insécables pour les milliers (ex: "1 500" au lieu de "1,5 mille")
-        formattedNumber = Math.floor(numberOfObjects).toLocaleString('fr-FR').replace(/\s/g, '\u00A0');
-    } else if (numberOfObjects >= 1) {
-        if (numberOfObjects % 1 !== 0) {
-            formattedNumber = numberOfObjects.toFixed(1).replace('.', ',');
-            if (formattedNumber.endsWith(',0')) {
-                formattedNumber = formattedNumber.slice(0, -2);
-            }
-        } else {
-            formattedNumber = Math.floor(numberOfObjects).toLocaleString();
-        }
-    } else {
-        const percentage = numberOfObjects * 100;
-        isPercentage = true;
-        
-        if (percentage >= 10) {
-            formattedNumber = percentage.toFixed(1).replace('.', ',');
-            if (formattedNumber.endsWith(',0')) {
-                formattedNumber = formattedNumber.slice(0, -2);
-            }
-            formattedNumber += '%';
-        } else if (percentage >= 1) {
-            formattedNumber = percentage.toFixed(1).replace('.', ',') + '%';
-        } else if (percentage >= 0.1) {
-            formattedNumber = percentage.toFixed(2).replace('.', ',') + '%';
-        } else if (percentage >= 0.001) {
-            formattedNumber = percentage.toFixed(3).replace('.', ',') + '%';
-        } else {
-            formattedNumber = '< 0,001%';
-        }
-    }
+    const formattedResult = formatObjectCount(numberOfObjects);
+    const formattedNumber = formattedResult.formattedNumber;
+    const isPercentage = formattedResult.isPercentage;
 
     // Le label est utilisé tel quel (pas de pluriel en français pour "X fois le/la/un/une...")
     const safeObjectLabel = escapeHTML(objectLabel);
@@ -414,7 +420,7 @@ export function calculateComparison() {
     if (isPercentage) {
         if (isCustomAmount) {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">${FINANCIAL_HEADER_HTML}</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -422,10 +428,10 @@ export function calculateComparison() {
                     <span class="result-fois-text">de ${safeCustomAmountText}</span>
                 </div>
             `;
-            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} de ${customAmountText}.`;
+            simpleText = `${FINANCIAL_SIMPLE_PREFIX}${formattedNumber} de ${customAmountText}.`;
         } else {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">${FINANCIAL_HEADER_HTML}</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -433,13 +439,13 @@ export function calculateComparison() {
                     <span class="result-fois-text">de ${safeObjectLabel}</span>
                 </div>
             `;
-            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} de ${objectLabel}.`;
+            simpleText = `${FINANCIAL_SIMPLE_PREFIX}${formattedNumber} de ${objectLabel}.`;
         }
     } else {
         const foisText = (formattedNumber.includes('million') || formattedNumber.includes('milliard')) ? "de fois" : "fois";
         if (isCustomAmount) {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">${FINANCIAL_HEADER_HTML}</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -447,10 +453,10 @@ export function calculateComparison() {
                     <span class="result-fois-text">${foisText} ${safeCustomAmountText}</span>
                 </div>
             `;
-            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} ${foisText} ${customAmountText}.`;
+            simpleText = `${FINANCIAL_SIMPLE_PREFIX}${formattedNumber} ${foisText} ${customAmountText}.`;
         } else {
             resultHTML = `
-                <div class="result-interpretation-header">Les prestations retraites (base + complémentaires) de 2025 représentent&nbsp;:</div>
+                <div class="result-interpretation-header">${FINANCIAL_HEADER_HTML}</div>
                 <div class="result-grid-financial">
                     <div class="result-box highlight">
                         <span class="value counter-digit"><span>${formattedNumber}</span></span>
@@ -458,7 +464,7 @@ export function calculateComparison() {
                     <span class="result-fois-text">${foisText} ${safeObjectLabel}</span>
                 </div>
             `;
-            simpleText = `Les 420 milliards de prestations retraites distribuées en 2025 (base ＋ complémentaires) représentent ${formattedNumber} ${foisText} ${objectLabel}.`;
+            simpleText = `${FINANCIAL_SIMPLE_PREFIX}${formattedNumber} ${foisText} ${objectLabel}.`;
         }
     }
 

@@ -16,6 +16,30 @@ let __marqueePaddingCache = null;
 let __customDropdownsInitialized = false;
 let __dropdownOutsideClickBound = false;
 
+const THOUSANDS_GROUP_REGEX = /\B(?=(\d{3})+(?!\d))/g;
+const DROPDOWN_LABEL_PREFIX_REGEX = /^(le|la|les|l'|un|une|des)\s+/i;
+const DROPDOWN_LABEL_L_PREFIX_REGEX = /^l'/i;
+const CUSTOM_AMOUNT_VALUE = 'autre';
+const MODE_SWITCH_DURATION_MS = 600;
+
+function formatNumberWithNbsp(value) {
+    return value.toString().replace(THOUSANDS_GROUP_REGEX, '\u00A0');
+}
+
+function closeDropdown(dropdown) {
+    dropdown.classList.remove('open');
+    const parentCard = dropdown.closest('.card');
+    if (parentCard) parentCard.classList.remove('dropdown-open');
+}
+
+function closeOpenDropdowns(exceptDropdown = null) {
+    document.querySelectorAll('.custom-dropdown.open').forEach(openDropdown => {
+        if (openDropdown !== exceptDropdown) {
+            closeDropdown(openDropdown);
+        }
+    });
+}
+
 /**
  * Nettoie le label pour l'affichage dans le dropdown financier
  * Enlève l'article initial et formate
@@ -24,7 +48,7 @@ let __dropdownOutsideClickBound = false;
  */
 function cleanLabelForDropdown(label) {
     // Enlever l'article au début (le, la, les, l', un, une, des)
-    let cleaned = label.replace(/^(le|la|les|l'|un|une|des)\s+/i, '').replace(/^l'/i, '');
+    let cleaned = label.replace(DROPDOWN_LABEL_PREFIX_REGEX, '').replace(DROPDOWN_LABEL_L_PREFIX_REGEX, '');
     // Majuscule au début
     cleaned = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
     return cleaned;
@@ -38,19 +62,21 @@ export function populateFinancialDropdown() {
     if (!DOM.objectTypeOptions || !DOM.objectTypeSelect) return;
     
     const financialExamples = getFinancialExamples();
+    const dropdownOptionsFragment = document.createDocumentFragment();
+    const nativeOptionsFragment = document.createDocumentFragment();
     
     // Vider les options existantes (garder seulement "Montant personnalisé")
-    const customOptionDiv = DOM.objectTypeOptions.querySelector('[data-value="autre"]');
+    const customOptionDiv = DOM.objectTypeOptions.querySelector(`[data-value="${CUSTOM_AMOUNT_VALUE}"]`);
     DOM.objectTypeOptions.innerHTML = '';
     if (customOptionDiv) {
-        DOM.objectTypeOptions.appendChild(customOptionDiv);
+        dropdownOptionsFragment.appendChild(customOptionDiv);
     } else {
         // Créer l'option personnalisée si elle n'existe pas
         const newCustomOption = document.createElement('div');
         newCustomOption.className = 'dropdown-option';
-        newCustomOption.setAttribute('data-value', 'autre');
+        newCustomOption.setAttribute('data-value', CUSTOM_AMOUNT_VALUE);
         newCustomOption.textContent = 'Montant personnalisé';
-        DOM.objectTypeOptions.appendChild(newCustomOption);
+        dropdownOptionsFragment.appendChild(newCustomOption);
     }
     
     // Vider le select natif aussi
@@ -58,27 +84,33 @@ export function populateFinancialDropdown() {
     // entre le dropdown personnalisé et le select natif
     DOM.objectTypeSelect.innerHTML = '';
     const customNativeOption = document.createElement('option');
-    customNativeOption.value = 'autre';
+    customNativeOption.value = CUSTOM_AMOUNT_VALUE;
     customNativeOption.textContent = 'Montant personnalisé';
-    DOM.objectTypeSelect.appendChild(customNativeOption);
+    nativeOptionsFragment.appendChild(customNativeOption);
     
     // Ajouter les options depuis examples.js
     financialExamples.forEach(example => {
+        const cleanedLabel = cleanLabelForDropdown(example.label);
+        const exampleValue = example.value.toString();
+
         // Option pour le dropdown personnalisé
         const divOption = document.createElement('div');
         divOption.className = 'dropdown-option';
         divOption.setAttribute('data-value', example.id);
-        divOption.setAttribute('data-price', example.value.toString());
-        divOption.textContent = cleanLabelForDropdown(example.label);
-        DOM.objectTypeOptions.appendChild(divOption);
+        divOption.setAttribute('data-price', exampleValue);
+        divOption.textContent = cleanedLabel;
+        dropdownOptionsFragment.appendChild(divOption);
         
         // Option pour le select natif
         const selectOption = document.createElement('option');
         selectOption.value = example.id;
-        selectOption.setAttribute('data-price', example.value.toString());
-        selectOption.textContent = cleanLabelForDropdown(example.label);
-        DOM.objectTypeSelect.appendChild(selectOption);
+        selectOption.setAttribute('data-price', exampleValue);
+        selectOption.textContent = cleanedLabel;
+        nativeOptionsFragment.appendChild(selectOption);
     });
+
+    DOM.objectTypeOptions.appendChild(dropdownOptionsFragment);
+    DOM.objectTypeSelect.appendChild(nativeOptionsFragment);
 }
 
 /**
@@ -100,6 +132,7 @@ export function initCustomDropdowns() {
         const options = dropdown.querySelectorAll('.dropdown-option');
         const nativeSelect = dropdown.parentElement.querySelector('select');
         const triggerText = trigger.querySelector('.trigger-text');
+        const parentCard = dropdown.closest('.card');
 
         // Créer un wrapper pour les options et la scrollbar
         const wrapper = document.createElement('div');
@@ -242,28 +275,13 @@ export function initCustomDropdowns() {
         trigger.addEventListener('click', (e) => {
             e.stopPropagation();
             // Fermer les autres dropdowns ouverts
-            document.querySelectorAll('.custom-dropdown.open').forEach(openDropdown => {
-                if (openDropdown !== dropdown) {
-                    openDropdown.classList.remove('open');
-                    // Fallback pour :has() - retirer .dropdown-open du card parent
-                    const parentCard = openDropdown.closest('.card');
-                    if (parentCard) parentCard.classList.remove('dropdown-open');
-                }
-            });
-            dropdown.classList.toggle('open');
-            
-            // Fallback pour :has() - toggler .dropdown-open sur le card parent
-            const parentCard = dropdown.closest('.card');
-            if (parentCard) {
-                if (dropdown.classList.contains('open')) {
-                    parentCard.classList.add('dropdown-open');
-                } else {
-                    parentCard.classList.remove('dropdown-open');
-                }
-            }
+            closeOpenDropdowns(dropdown);
+            const willOpen = !dropdown.classList.contains('open');
+            dropdown.classList.toggle('open', willOpen);
+            if (parentCard) parentCard.classList.toggle('dropdown-open', willOpen);
             
             // Mettre à jour les valeurs cachées si le dropdown est ouvert
-            if (dropdown.classList.contains('open')) {
+            if (willOpen) {
                 // Utiliser requestAnimationFrame pour s'assurer que le DOM est à jour
                 requestAnimationFrame(() => {
                     updateCachedValues();
@@ -284,11 +302,7 @@ export function initCustomDropdowns() {
 
             // Fermer le dropdown IMMÉDIATEMENT avant toute autre chose
             // Cela permet au clic suivant (sur "Comparer") d'atteindre le bouton
-            dropdown.classList.remove('open');
-            
-            // Fallback pour :has() - retirer .dropdown-open du card parent
-            const parentCard = dropdown.closest('.card');
-            if (parentCard) parentCard.classList.remove('dropdown-open');
+            closeDropdown(dropdown);
 
             // Update trigger
             triggerText.textContent = text;
@@ -311,12 +325,7 @@ export function initCustomDropdowns() {
     if (!__dropdownOutsideClickBound) {
         __dropdownOutsideClickBound = true;
         document.addEventListener('click', () => {
-            document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => {
-                dropdown.classList.remove('open');
-                // Fallback pour :has() - retirer .dropdown-open du card parent
-                const parentCard = dropdown.closest('.card');
-                if (parentCard) parentCard.classList.remove('dropdown-open');
-            });
+            closeOpenDropdowns();
         });
     }
 }
@@ -354,7 +363,7 @@ export function setRandomExample() {
     }
 
     const randomExample = getRandomExample();
-    const formattedValue = randomExample.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+    const formattedValue = formatNumberWithNbsp(randomExample.value);
 
     if (DOM.amount) {
         DOM.amount.value = formattedValue;
@@ -364,15 +373,7 @@ export function setRandomExample() {
     formatNumberInput(DOM.amount);
 
     if (DOM.currentExample) {
-        let label = randomExample.label;
-
-        let cleanLabelForMarquee = label.replace(/^(le|la|les|l'|un|une|des)\s+/i, '').replace(/^l'/i, '');
-        cleanLabelForMarquee = cleanLabelForMarquee.charAt(0).toUpperCase() + cleanLabelForMarquee.slice(1);
-
-        const parts = label.split(/\s+[-–—]\s+/);
-        if (parts.length > 1) {
-            label = parts.slice(1).join(' - ');
-        }
+        const cleanLabelForMarquee = cleanLabelForDropdown(randomExample.label);
 
         DOM.currentExample.innerHTML = `<span class="marquee-content">${cleanLabelForMarquee}</span>`;
         DOM.currentExample.classList.remove('scrolling');
@@ -494,7 +495,7 @@ export function switchMode(mode) {
 
     setTimeout(() => {
         state.isCalculating = false;
-    }, 600); // Correspond à la durée de transition CSS
+    }, MODE_SWITCH_DURATION_MS); // Correspond à la durée de transition CSS
 }
 
 /**
@@ -526,17 +527,14 @@ export function updateObjectPrice() {
 
     const selectedValue = DOM.objectTypeSelect.value;
 
-    if (selectedValue === 'autre') {
-        DOM.objectPriceInput.value = '';
-        DOM.objectPriceInput.disabled = false;
-    } else if (selectedValue === '') {
+    if (selectedValue === CUSTOM_AMOUNT_VALUE || selectedValue === '') {
         DOM.objectPriceInput.value = '';
         DOM.objectPriceInput.disabled = false;
     } else {
         // Récupérer l'exemple depuis examples.js via l'ID
         const example = getExampleById(selectedValue);
         if (example) {
-            const formattedPrice = example.value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '\u00A0');
+            const formattedPrice = formatNumberWithNbsp(example.value);
             DOM.objectPriceInput.value = formattedPrice;
         }
         DOM.objectPriceInput.disabled = true;
