@@ -1195,6 +1195,21 @@ export function shareOnSocial(platform) {
         case 'bluesky':
             shareUrl = `https://bsky.app/intent/compose?text=${encodeURIComponent(message)}`;
             break;
+        case 'discord':
+            // Discord ne supporte pas de lien direct de partage de texte/image via URL avec remplissage.
+            // On utilise le modal guidé (Copier + Ouvrir).
+            openInstagramDesktopShareModal({
+                imageUrl: null,
+                modalTitle: 'Partager sur Discord',
+                modalInstructions: "Étape 1 : Copiez le texte.\nÉtape 2 : Ouvrez Discord et collez votre message dans un salon ou un DM.",
+                openButtonLabel: 'Ouvrir Discord',
+                openUrl: 'https://discord.com/channels/@me',
+                enableClipboard: messageWithUrl || message,
+                onClose: function () {
+                    // Nettoyage si besoin
+                }
+            });
+            return;
         case 'linkedin':
             if (isMobile()) {
                 // Mobile : modal guidé (LinkedIn app ne supporte pas bien le texte via URL)
