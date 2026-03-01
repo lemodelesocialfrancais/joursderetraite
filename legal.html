@@ -73,16 +73,31 @@
             transition: opacity 0.2s;
         }
 
+        .back-link-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 8px;
+        }
+
         .back-link:hover {
             opacity: 0.8;
         }
 
-        .placeholder {
-            background: rgba(230, 197, 90, 0.1);
+        .site-link {
             color: var(--gold-400);
-            padding: 0 4px;
-            border-radius: 2px;
-            font-weight: 600;
+        }
+
+        .privacy-list {
+            list-style-type: disc;
+            margin-left: 1.5rem;
+        }
+
+        .legal-footer {
+            margin-top: 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--gray-400);
+            padding-bottom: 1rem;
         }
     </style>
 </head>
@@ -90,7 +105,7 @@
 <body>
     <div class="container">
         <a href="index.html" class="back-link">
-            <svg style="width:20px;height:20px;margin-right:8px" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="back-link-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18">
                 </path>
             </svg>
@@ -109,14 +124,14 @@
             <p><strong>Hébergeur :</strong><br>
                 Le site est hébergé par <strong>GitHub Inc.</strong><br>
                 Adresse : 88 Colin P. Kelly Jr. St, San Francisco, CA 94107, USA<br>
-                Site web : <a href="https://pages.github.com" style="color:var(--gold-400)">pages.github.com</a></p>
+                Site web : <a href="https://pages.github.com" class="site-link" rel="noopener noreferrer">pages.github.com</a></p>
         </section>
 
         <section>
             <h2>2. Politique de Confidentialité</h2>
             <p>La protection de votre vie privée est une priorité. Le site "Jours de Retraite" est conçu pour être
                 respectueux de vos données :</p>
-            <ul style="list-style-type: disc; margin-left: 1.5rem;">
+            <ul class="privacy-list">
                 <li><strong>Aucune collecte de données personnelles :</strong> Nous ne collectons, ne stockons et ne
                     traitons aucune donnée personnelle vous concernant.</li>
                 <li><strong>Pas de cookies tiers :</strong> Le site n'utilise aucun cookie de traçage ou de publicité.
@@ -142,8 +157,7 @@
                 absolue des résultats pour des situations individuelles complexes.</p>
         </section>
 
-        <footer
-            style="margin-top: 2rem; text-align: center; font-size: 0.8rem; color: var(--gray-400); padding-bottom: 1rem;">
+        <footer class="legal-footer">
             Dernière mise à jour : Février 2026
         </footer>
     </div>

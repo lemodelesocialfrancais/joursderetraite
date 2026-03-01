@@ -64,9 +64,10 @@ Cette application permet aux utilisateurs de comprendre l'échelle des montants 
 
 ### Partage
 - Partage natif (Web Share API)
-- Réseaux sociaux : Facebook, X/Twitter, WhatsApp, Telegram, Messenger, Pinterest, LinkedIn
+- Réseaux sociaux : Discord, Facebook, X/Twitter, WhatsApp, Telegram, Messenger, Pinterest, LinkedIn, Instagram, TikTok, Snapchat, Threads, Mastodon, Reddit, Bluesky
+- Guided Modal Experience : Utilise une approche "Copier + Ouvrir" pour les réseaux limitant le partage par URL direct (Instagram, TikTok, Snapchat, Messenger, Discord, LinkedIn, Pinterest)
 - Email et SMS
-- Copie dans le presse-papiers
+- Copie dans le presse-papiers avec feedback visuel "Copié !"
 
 ### PWA
 - Installation sur appareil mobile/desktop

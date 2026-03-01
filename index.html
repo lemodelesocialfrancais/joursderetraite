@@ -1,8 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr" class="dark">
-
 <head>
-    <!-- Meta Tags & SEO -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <link rel="preload" href="bateaucroisiere.webp" as="image" fetchpriority="high">
@@ -86,7 +84,6 @@
         .reveal-8 { animation-delay: 0.8s; }
     </style>
 
-    <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://lemodelesocialfrancais.github.io/joursderetraite/">
     <meta property="og:title" content="Jours de Retraite">
@@ -99,7 +96,6 @@
     <meta property="og:site_name" content="Jours de Retraite">
     <meta property="og:locale" content="fr_FR">
 
-    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://lemodelesocialfrancais.github.io/joursderetraite/">
     <meta name="twitter:title" content="Jours de Retraite">
@@ -108,12 +104,10 @@
     <meta name="twitter:image" content="https://lemodelesocialfrancais.github.io/joursderetraite/icon-maskable-512x512.png">
     <meta name="twitter:image:alt" content="Icône de l'application Jours de Retraite">
 
-    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
     <script type="module" src="js/main.js"></script>
     <link rel="manifest" href="manifest.json">
 
-    <!-- iOS & Android PWA Support -->
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -124,16 +118,13 @@
 
 <body>
     <div class="app-container">
-        <!-- Bulles décoratives -->
-        <div class="bubbles">
+        <div class="bubbles" aria-hidden="true">
             <div class="bubble"></div>
             <div class="bubble"></div>
             <div class="bubble"></div>
             <div class="bubble"></div>
             <div class="bubble"></div>
         </div>
-
-        <!-- Sprite SVG externalisé pour réduire la taille du DOM initial -->
 
         <!-- Template des boutons de partage (utilisé pour les deux modes) -->
         <template id="share-buttons-template">
@@ -203,7 +194,7 @@
                 <div class="header-content">
                     <div class="header-boat-wrap">
                         <img src="bateaucroisiere.webp" alt="Bateau de croisière" class="header-boat animate" width="64"
-                            height="64" decoding="async" />
+                            height="64" decoding="async" fetchpriority="high" />
                     </div>
                     <div class="header-text">
                         <h1 class="header-title title-shimmer title-reveal-optimized" data-text="Jours de Retraite">Jours de
@@ -240,7 +231,7 @@
 
                     <!-- Bouton exemple -->
                     <div class="example-section fade-in-slide-up reveal-4">
-                        <div class="example-btn-wrapper" style="order: 1;">
+                        <div class="example-btn-wrapper">
                             <svg class="example-btn-border-svg">
                                 <path class="marching-path" d="" />
                             </svg>
@@ -249,11 +240,11 @@
                                 <span>Charger un exemple</span>
                             </button>
                         </div>
-                        <p id="current-example" class="current-example" style="order: 2;"></p>
+                        <p id="current-example" class="current-example"></p>
                     </div>
 
                     <!-- Bouton calculer -->
-                    <div class="fade-in-slide-up reveal-5" style="width: 100%;">
+                    <div class="fade-in-slide-up reveal-5">
                         <div class="btn-group">
                             <button id="calculate-btn-temporal" class="btn btn-primary shimmer-btn">
                                 <svg width="16" height="16" class="mr-1"><use href="icons.svg#icon-calculator"/></svg>
@@ -315,7 +306,7 @@
                         </div>
 
                         <!-- Champ Période de retraite (Masqué par défaut mais fonctionnel = 1 an) -->
-                        <div id="retirement-period-container" style="display: none;">
+                        <div id="retirement-period-container" hidden>
                             <div class="card-label">📅 Période de retraite</div>
                             <div class="input-wrapper">
                                 <select id="time-period" class="input-field">
@@ -364,7 +355,7 @@
             </div>
 
             <!-- Accordéon Méthodologie -->
-            <div class="fade-in-slide-up reveal-6" style="width: 100%;">
+            <div class="fade-in-slide-up reveal-6">
                 <div class="accordion" id="methodology-section">
                     <div id="methodology-header" class="accordion-header">
                         <span class="accordion-title">
@@ -507,8 +498,6 @@
         </button>
     </div>
 
-    <script src="js/modules/landing-effects.js"></script>
-
     <!-- Fallback message pour erreurs de chargement des modules -->
     <div id="fallback-message" class="fallback-message hidden">
         <div class="fallback-icon">
@@ -522,6 +511,7 @@
         <button id="fallback-close-btn" class="fallback-close">Fermer</button>
     </div>
 
-</body>
+    <script src="js/modules/landing-effects.js"></script>
 
+</body>
 </html>
