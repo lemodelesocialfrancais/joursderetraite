@@ -4,7 +4,7 @@
 
 ## Description
 
-Cette application permet aux utilisateurs de comprendre l'échelle des montants en les comparant au budget annuel des retraites françaises (420 milliards € en 2025). Elle offre deux modes de calcul :
+Cette application permet aux utilisateurs de comprendre l'échelle des montants en les comparant au budget annuel des retraites françaises (420 milliards € en 2025, basé sur la projection du COR de 407 milliards € en 2024 pour 2025). Elle offre deux modes de calcul :
 
 - **Mode Temporel** : Convertit un montant en durée équivalente de versement de retraites
 - **Mode Financier** : Compare un montant ou un objet au coût des retraites sur une période donnée
@@ -55,7 +55,7 @@ Cette application permet aux utilisateurs de comprendre l'échelle des montants 
 ### Calculateur temporel
 - Saisie d'un montant en euros
 - Conversion en équivalent de jours/heures/minutes de retraites versées
-- Basé sur le budget annuel : 420 milliards € (CNAV + Agirc-Arrco 2025)
+- Basé sur le budget annuel : 420 milliards € (source : COR, projection 407 Mds € en 2024 pour 2025)
 
 ### Calculateur financier
 - Comparaison avec des objets prédéfinis (Tour Eiffel, Apollo, etc.)
@@ -80,7 +80,7 @@ Cette application permet aux utilisateurs de comprendre l'échelle des montants 
 Durée (jours) = (Montant / 420 000 000 000) × 365.25
 ```
 
-Le montant total des retraites versées en France en 2025 est estimé à 420 milliards d'euros, incluant :
+Le montant total des retraites versées en France en 2025 est estimé à 420 milliards d'euros (source : COR, Rapport annuel 2025, projection de 407 milliards € en 2024 pour 2025 : https://www.cor-retraites.fr/sites/default/files/2025-06/RA_2025_def_publi.pdf), incluant :
 - Les pensions de base (CNAV)
 - Les pensions complémentaires (Agirc-Arrco)
 
@@ -112,7 +112,7 @@ Les fonctions principales sont exposées globalement via `window` pour compatibi
 
 ## Source des données
 
-- Budget des retraites : CNAV/Agirc-Arrco 2025
+- Budget des retraites : Conseil d'Orientation des Retraites (COR), Rapport annuel 2025 — projection de 407 milliards € en 2024 pour 2025 (https://www.cor-retraites.fr/sites/default/files/2025-06/RA_2025_def_publi.pdf)
 - Prix des exemples historiques : Sources publiques, ajustés pour l'inflation
 - Taux d'inflation : INSEE
 
