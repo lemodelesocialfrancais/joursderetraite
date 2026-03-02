@@ -76,14 +76,17 @@ html {
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    height: 100vh;
+    overflow: hidden;
 }
 
 body {
     font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: var(--gradient-navy) !important;
     color: var(--white);
-    min-height: 100vh;
-    overflow-x: hidden;
+    height: 100vh;
+    max-height: 100vh;
+    overflow: hidden;
     line-height: 1.5;
 }
 
@@ -93,15 +96,12 @@ body {
 .app-container {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
+    height: 100vh;
+    max-height: 100vh;
     max-width: 100vw;
     position: relative;
-    /* overflow: hidden; */
-    /* Cause coupure ombre bouton */
-    overflow-x: hidden;
-    /* Garder l'overflow-x pour éviter le scroll horizontal */
-    overflow-y: auto;
-    /* Permet le scroll vertical sur tous les appareils */
+    overflow: hidden;
+    /* Empêche tout scroll - taille fixe */
 }
 
 .main-content {
@@ -2115,7 +2115,8 @@ select.input-field option {
     background: var(--navy-800);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: var(--radius-md);
-    max-height: 300px;
+    max-height: 40vh;
+    /* Limite à 40% de la hauteur de l'écran */
     z-index: 1000;
     opacity: 0;
     visibility: hidden;
@@ -2124,7 +2125,9 @@ select.input-field option {
     transform: translateY(-10px);
     transition: all var(--transition-base);
     box-shadow: var(--shadow-lg);
-    overflow: hidden;
+    overflow-y: auto;
+    /* Scroll interne pour les options longues */
+    overflow-x: hidden;
 }
 
 .dropdown-options::-webkit-scrollbar {
