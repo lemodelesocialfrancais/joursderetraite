@@ -726,7 +726,7 @@ function getCurrentAmountValue() {
  * @param {string} mode - 'temporal' ou 'financial'
  */
 export function copyResult(mode = 'temporal') {
-    const message = getShareMessage(mode, true);
+    const message = getResultText(mode);
     const resultSection = mode === 'financial'
         ? (DOM.resultSectionFinancial || document.querySelector(RESULT_SECTION_FINANCIAL_SELECTOR))
         : (DOM.resultSectionTemporal || document.querySelector(RESULT_SECTION_TEMPORAL_SELECTOR));
