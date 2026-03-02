@@ -34,20 +34,19 @@
 
         /* Reset et base */
         *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-        html { background: #0a192f; height: 100vh; overflow: hidden; }
+        html { background: #0a192f; }
         body {
             background: var(--gradient-navy) !important;
             color: var(--white);
-            height: 100vh;
-            max-height: 100vh;
-            overflow: hidden;
+            min-height: 100vh;
+            overflow-x: hidden;
             font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             -webkit-font-smoothing: antialiased;
             line-height: 1.5;
         }
 
-        /* Layout principal - Hauteur fixe, pas de scroll */
-        .app-container { display: flex; flex-direction: column; height: 100vh; max-height: 100vh; max-width: 100vw; overflow: hidden; }
+        /* Layout principal */
+        .app-container { display: flex; flex-direction: column; min-height: 100vh; max-width: 100vw; overflow-x: hidden; overflow-y: auto; }
         .main-content { flex: 1; display: flex; flex-direction: column; padding: 0.4rem 0.1rem 0.1rem 0.1rem; }
 
         /* Header */
