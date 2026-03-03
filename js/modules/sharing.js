@@ -771,12 +771,12 @@ function getShareMessage(mode, includeUrl = true) {
     // Détermine la conjugaison du verbe selon le nombre du sujet
     function getVerbForm(description) {
         const lowerDesc = description.toLowerCase();
-        // Singuliers : commence par "un " (un an, un smicard) ou est au format monétaire singulier
-        if (lowerDesc.startsWith('un ')) {
-            return 'représente';
+        // Pluriels : commence par "les " ou "des "
+        if (lowerDesc.startsWith('les ') || lowerDesc.startsWith('des ')) {
+            return 'représentent';
         }
-        // Pluriels par défaut (deux, trois, plusieurs, etc.)
-        return 'représentent';
+        // Singuliers par défaut (le, la, un, une, l', etc.)
+        return 'représente';
     }
 
     let message;
@@ -825,12 +825,12 @@ async function generateShareImageBlob(mode) {
     // Détermine la conjugaison du verbe selon le nombre du sujet
     function getVerbFormForImage(description) {
         const lowerDesc = description.toLowerCase();
-        // Singuliers : commence par "un " (un an, un smicard)
-        if (lowerDesc.startsWith('un ')) {
-            return 'représente';
+        // Pluriels : commence par "les " ou "des "
+        if (lowerDesc.startsWith('les ') || lowerDesc.startsWith('des ')) {
+            return 'représentent';
         }
-        // Pluriels par défaut (deux, trois, plusieurs, etc.)
-        return 'représentent';
+        // Singuliers par défaut (le, la, un, une, l', etc.)
+        return 'représente';
     }
 
     // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
