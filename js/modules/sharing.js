@@ -768,6 +768,17 @@ function getShareMessage(mode, includeUrl = true) {
         return null;
     }
 
+    // Détermine la conjugaison du verbe selon le nombre du sujet
+    function getVerbForm(description) {
+        const lowerDesc = description.toLowerCase();
+        // Singuliers : commence par "un " (un an, un smicard) ou est au format monétaire singulier
+        if (lowerDesc.startsWith('un ')) {
+            return 'représente';
+        }
+        // Pluriels par défaut (deux, trois, plusieurs, etc.)
+        return 'représentent';
+    }
+
     let message;
     if (mode === 'temporal') {
         let description;
@@ -775,12 +786,14 @@ function getShareMessage(mode, includeUrl = true) {
         // Si c'est un exemple, on utilise le label de l'exemple
         if (state.currentExampleLabel) {
             description = state.currentExampleLabel;
-            message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
+            const verb = getVerbForm(description);
+            message = `${description} ${verb} ${resultText} de prestations retraites (base + complémentaires).`;
         } else {
             // Sinon c'est un montant personnalisé, on utilise le montant formaté
             const amountValue = getCurrentAmountValue();
             description = SHARE_CURRENCY_FORMATTER.format(amountValue);
 
+            // Pour un montant personnalisé, c'est toujours pluriel ("1 234 € représentent...")
             message = `${description} représentent ${resultText} de prestations retraites (base + complémentaires).`;
         }
 
@@ -809,6 +822,17 @@ async function generateShareImageBlob(mode) {
         return null;
     }
 
+    // Détermine la conjugaison du verbe selon le nombre du sujet
+    function getVerbFormForImage(description) {
+        const lowerDesc = description.toLowerCase();
+        // Singuliers : commence par "un " (un an, un smicard)
+        if (lowerDesc.startsWith('un ')) {
+            return 'représente';
+        }
+        // Pluriels par défaut (deux, trois, plusieurs, etc.)
+        return 'représentent';
+    }
+
     // Préparer le texte du résultat - UTILISER L'EXEMPLE AU LIEU DU MONTANT
     let fullText;
     if (mode === 'temporal') {
@@ -816,7 +840,8 @@ async function generateShareImageBlob(mode) {
         if (state.currentExampleLabel) {
             // Capitaliser la première lettre
             const label = state.currentExampleLabel.charAt(0).toUpperCase() + state.currentExampleLabel.slice(1);
-            fullText = `${label}\nreprésente\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
+            const verb = getVerbFormForImage(state.currentExampleLabel);
+            fullText = `${label}\n${verb}\n${resultText}\nde prestations retraites\n(base + complémentaires).`;
         } else {
             // Fallback vers le montant si pas d'exemple
             const amountValue = getCurrentAmountValue();
