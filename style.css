@@ -186,6 +186,113 @@ body {
     display: block;
 }
 
+/* Bouton logo rond Linktree */
+.header-logo-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    margin-left: auto;
+    position: relative;
+    text-decoration: none;
+    transition: transform var(--transition-base);
+}
+
+.header-logo-link:hover {
+    transform: scale(1.08);
+}
+
+.header-logo-img {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--gold-500);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.3), 0 0 0 2px rgba(212, 175, 55, 0.1);
+    transition: all var(--transition-base);
+    cursor: pointer;
+}
+
+.header-logo-link:hover .header-logo-img {
+    border-color: var(--gold-400);
+    box-shadow: 0 6px 25px rgba(212, 175, 55, 0.5), 0 0 0 3px rgba(212, 175, 55, 0.2);
+}
+
+/* Indicateur visuel lien externe */
+.header-logo-link::before {
+    content: "🔗";
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    font-size: 14px;
+    background: var(--navy-800);
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--gold-500);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    z-index: 1;
+    transition: all var(--transition-base);
+}
+
+.header-logo-link:hover::before {
+    transform: scale(1.1);
+    background: var(--gold-500);
+}
+
+/* Tooltip */
+.header-logo-tooltip {
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--gradient-card);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.3);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    color: var(--gold-400);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition-base);
+    box-shadow: var(--shadow-md);
+    pointer-events: none;
+}
+
+.header-logo-link:hover .header-logo-tooltip {
+    opacity: 1;
+    visibility: visible;
+    bottom: -35px;
+}
+
+/* Responsive pour le bouton logo */
+@media (max-width: 380px) {
+    .header-logo-img {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .header-logo-link::before {
+        width: 18px;
+        height: 18px;
+        font-size: 11px;
+        top: -6px;
+        right: -6px;
+    }
+}
+
+@media (min-width: 768px) {
+    .header-logo-img {
+        width: 56px;
+        height: 56px;
+    }
+}
+
 /* ============================================
     5. CARTES MODERNES - Glassmorphism
     ============================================ */
